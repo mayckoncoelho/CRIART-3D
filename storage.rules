@@ -2,21 +2,23 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
     function isAdmin() {
-      return request.auth != null && request.auth.uid == 'ADMIN_UID_HERE';
+      return request.auth != null && request.auth.uid == 'wc2eTkEo9qdfsSYKbl2qE77Oa2J2';
     }
 
     match /products/{allPaths=**} {
       allow read: if true;
-      allow write: if isAdmin()
+      allow create, update: if isAdmin()
         && request.resource.size < 10 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
+      allow delete: if isAdmin();
     }
 
     match /banners/{allPaths=**} {
       allow read: if true;
-      allow write: if isAdmin()
+      allow create, update: if isAdmin()
         && request.resource.size < 10 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
+      allow delete: if isAdmin();
     }
 
     match /{allPaths=**} {
