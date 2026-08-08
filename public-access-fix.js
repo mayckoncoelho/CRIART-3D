@@ -17,11 +17,23 @@ function productCard(p){
   </article>`;
 }
 
+function bannerCard(b){
+  return `<div class="promo-banner" ${b.imageUrl?`style="background-image:linear-gradient(90deg,rgba(0,0,0,.82),rgba(0,0,0,.25)),url('${esc(b.imageUrl)}')"`:''}><div><span class="tag">Oferta</span><h2>${esc(b.titulo||'')}</h2><p>${esc(b.texto||'')}</p></div></div>`;
+}
+
+function clearConnectingNotice(){
+  [...document.querySelectorAll('#app .notice')].forEach(el=>{
+    const t=(el.textContent||'').toLowerCase();
+    if(t.includes('catálogo') && t.includes('banco de dados')) el.remove();
+  });
+}
+
 async function loadPublicCatalog(){
+  if(auth.currentUser) return;
+  const path = location.pathname.replace(/\/$/,'') || '/';
   try{
-    const snap = await getDocs(collection(db,'products'));
-    const products = snap.docs.map(d=>({id:d.id,...d.data()})).filter(p=>p.ativo!==false);
-    const path = location.pathname.replace(/\/$/,'') || '/';
+    const productSnap = await getDocs(collection(db,'products'));
+    const products = productSnap.docs.map(d=>({id:d.id,...d.data()})).filter(p=>p.ativo!==false);
     if(path === '/produtos'){
       const grid = document.querySelector('#app .grid');
       if(grid) grid.innerHTML = products.length ? products.map(productCard).join('') : '<p class="muted">Nenhum produto publicado ainda.</p>';
@@ -31,8 +43,24 @@ async function loadPublicCatalog(){
       const grid = destaques?.parentElement?.querySelector('.grid');
       if(grid) grid.innerHTML = products.length ? products.map(productCard).join('') : '<p class="muted">Nenhum produto publicado ainda.</p>';
     }
+    clearConnectingNotice();
   } catch(e){
-    console.error('Falha ao carregar catálogo público:', e);
+    console.error('Falha ao carregar produtos públicos:', e);
+  }
+
+  try{
+    const bannerSnap = await getDocs(collection(db,'banners'));
+    const banners = bannerSnap.docs.map(d=>({id:d.id,...d.data()})).filter(b=>b.ativo!==false);
+    if(path === '/' && banners.length){
+      let area = document.querySelector('#app .banner-grid');
+      if(!area){
+        const hero = document.querySelector('#app .hero');
+        if(hero){ area = document.createElement('section'); area.className='banner-grid'; hero.insertAdjacentElement('afterend',area); }
+      }
+      if(area) area.innerHTML = banners.map(bannerCard).join('');
+    }
+  } catch(e){
+    console.error('Falha ao carregar banners públicos:', e);
   }
 }
 
@@ -47,17 +75,12 @@ function secureCalculator(user){
   }
 }
 
-onAuthStateChanged(auth, user=>{
-  secureCalculator(user);
-  if(!user) loadPublicCatalog();
-});
+function retryPublicLoads(){
+  [100,400,900,1800,3200].forEach(ms=>setTimeout(()=>{ secureCalculator(auth.currentUser); if(!auth.currentUser) loadPublicCatalog(); },ms));
+}
 
-window.addEventListener('popstate',()=>{
-  secureCalculator(auth.currentUser);
-  if(!auth.currentUser) setTimeout(loadPublicCatalog,50);
-});
-
-setTimeout(()=>{
-  secureCalculator(auth.currentUser);
-  if(!auth.currentUser) loadPublicCatalog();
-},400);
+onAuthStateChanged(auth, user=>{ secureCalculator(user); if(!user) retryPublicLoads(); });
+window.addEventListener('popstate',retryPublicLoads);
+window.addEventListener('pageshow',retryPublicLoads);
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) retryPublicLoads(); });
+retryPublicLoads();
