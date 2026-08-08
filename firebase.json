@@ -21,12 +21,27 @@
     ],
     "headers": [
       {
-        "source": "**/*.@(js|css)",
+        "source": "/index.html",
         "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "public,max-age=3600"
-          }
+          { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate" }
+        ]
+      },
+      {
+        "source": "/app.js",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate" }
+        ]
+      },
+      {
+        "source": "/firebase-config.js",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate" }
+        ]
+      },
+      {
+        "source": "/styles.css",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache, must-revalidate" }
         ]
       }
     ]
