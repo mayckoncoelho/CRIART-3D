@@ -17,16 +17,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Preparar credencial Firebase
-        shell: bash
-        run: |
-          printf '%s' '${{ secrets.FIREBASE_SERVICE_ACCOUNT_CRIART_3D }}' > "$RUNNER_TEMP/firebase-service-account.json"
-
-      - name: Publicar regras Firestore e Storage
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: npx --yes firebase-tools@latest deploy --only firestore:rules,storage --project criart-3d --non-interactive
-
       - name: Publicar site no Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
