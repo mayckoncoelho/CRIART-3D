@@ -17,9 +17,16 @@ const safeName = n => n.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(
 async function loadCollection(name){ const snap = await getDocs(collection(db,name)); return snap.docs.map(d=>({id:d.id,...d.data()})); }
 async function refreshData(){
   try{
-    const [products,coupons,banners] = await Promise.all([loadCollection('products'),loadCollection('coupons'),loadCollection('banners')]);
+    const [products,banners] = await Promise.all([loadCollection('products'),loadCollection('banners')]);
     state.products = products.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
-    state.coupons = coupons; state.banners = banners.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)); state.error='';
+    state.banners = banners.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+    state.error='';
+    if(state.user){
+      try{ state.coupons = await loadCollection('coupons'); }
+      catch(e){ state.coupons=[]; console.error('Não foi possível carregar cupons administrativos:',e); }
+    }else{
+      state.coupons=[];
+    }
   }catch(e){ state.error=e?.message||'Não foi possível carregar os dados.'; }
   state.loading=false;
 }
