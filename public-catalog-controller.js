@@ -35,6 +35,15 @@ function removeConnectingNotice(){
   });
 }
 
+function syncBanner(section){
+  if(!section) return;
+  const active = banners.filter(b=>b.ativo!==false);
+  const existing = [...document.querySelectorAll('#app .banner-grid')];
+  existing.forEach(el=>el.remove());
+  if(!active.length) return;
+  section.insertAdjacentHTML('beforebegin', bannerMarkup());
+}
+
 function applyCatalog(){
   if(applying || !loaded) return;
   const path = currentPath();
@@ -65,11 +74,7 @@ function applyCatalog(){
           grid.dataset.catalogIds = expected;
         }
       }
-      if(section){
-        document.querySelectorAll('#app .public-banner-grid').forEach(el=>el.remove());
-        const html = bannerMarkup();
-        if(html) section.insertAdjacentHTML('beforebegin', html);
-      }
+      syncBanner(section);
     }
   } finally {
     applying = false;
