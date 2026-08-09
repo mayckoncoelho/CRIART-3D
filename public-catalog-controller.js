@@ -23,7 +23,7 @@ function ensureHeroStyles(){
   .hero-layout{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(360px,.92fr);align-items:stretch;border:1px solid var(--line);border-radius:28px;overflow:hidden;background:linear-gradient(110deg,#101419 0%,#11161b 52%,#21170f 100%);min-height:520px}
   .hero-layout>.hero{margin:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;min-height:100%;display:flex;flex-direction:column;justify-content:center;padding:72px 70px!important;position:relative;z-index:2}
   .hero-side-carousel{position:relative;min-height:100%;border:0!important;border-left:0!important;border-radius:0;overflow:hidden;background:transparent!important;display:flex;align-items:center;justify-content:center;padding:28px 32px 28px 0}
-  .hero-side-slide{position:absolute;inset:28px 32px 28px 0;opacity:0;transition:opacity .5s ease;background:center/contain no-repeat transparent!important}
+  .hero-side-slide{position:absolute;inset:28px 32px 28px 0;opacity:0;transition:opacity .5s ease;background-position:center;background-size:contain;background-repeat:no-repeat;background-color:transparent}
   .hero-side-slide.active{opacity:1}
   .hero-side-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:3;width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,.3);background:rgba(0,0,0,.52);color:#fff;font-size:24px;cursor:pointer;opacity:.8}
   .hero-side-arrow:hover{opacity:1}.hero-side-prev{left:12px}.hero-side-next{right:42px}
