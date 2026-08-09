@@ -28,16 +28,37 @@ async function removePhoto(product,index,card,box){
   }catch(e){msg.textContent='Erro ao excluir: '+(e.message||e)}
 }
 
+async function setMainPhoto(product,index,card,box){
+  const urls=[...(product.imageUrls||[])];
+  const paths=[...(product.imagePaths||[])];
+  if(index<=0||index>=urls.length)return;
+  const msg=card.querySelector('.msg');
+  msg.textContent='Alterando foto principal...';
+  try{
+    const [url]=urls.splice(index,1);
+    urls.unshift(url);
+    if(paths.length>index){
+      const [path]=paths.splice(index,1);
+      paths.unshift(path);
+    }
+    await updateDoc(doc(db,'products',product.id),{imageUrls:urls,imagePaths:paths,updatedAt:serverTimestamp()});
+    msg.textContent='Foto principal alterada.';
+    box.remove();
+    setTimeout(enhance,150);
+  }catch(e){msg.textContent='Erro ao alterar foto principal: '+(e.message||e)}
+}
+
 async function enhance(){
  if(location.pathname!='/admin'||!auth.currentUser||document.querySelector('#multiPhotoManager'))return;
  const root=document.querySelector('#app'); if(!root)return;
  const ps=await products();
- const box=document.createElement('section');box.id='multiPhotoManager';box.innerHTML='<h2>Gerenciar fotos</h2><p class="muted">Adicione novas fotos ou exclua uma foto específica sem remover o anúncio.</p>';
+ const box=document.createElement('section');box.id='multiPhotoManager';box.innerHTML='<h2>Gerenciar fotos</h2><p class="muted">Adicione novas fotos, exclua uma foto específica ou escolha a capa principal do anúncio.</p>';
  ps.forEach(p=>{
    const c=document.createElement('article');c.className='card';c.style.marginBottom='12px';
-   const gallery=(p.imageUrls||[]).map((u,i)=>`<div class="photo-manage-item" style="display:inline-flex;flex-direction:column;gap:6px;margin:0 10px 10px 0;vertical-align:top"><img src="${u}" style="width:96px;height:96px;object-fit:cover;border-radius:10px"><button type="button" class="btn secondary deleteOnePhoto" data-index="${i}" style="padding:7px 9px;font-size:.78rem">Excluir foto</button></div>`).join('');
+   const gallery=(p.imageUrls||[]).map((u,i)=>`<div class="photo-manage-item" style="display:inline-flex;flex-direction:column;gap:6px;margin:0 10px 10px 0;vertical-align:top"><div style="position:relative"><img src="${u}" style="width:96px;height:96px;object-fit:cover;border-radius:10px;border:${i===0?'2px solid var(--accent)':'1px solid var(--line)'}">${i===0?'<span style="position:absolute;left:5px;top:5px;background:#111;color:#fff;padding:3px 6px;border-radius:999px;font-size:.68rem">Principal</span>':''}</div>${i===0?'<button type="button" class="btn secondary" disabled style="padding:7px 9px;font-size:.78rem;opacity:.6">Foto principal</button>':`<button type="button" class="btn secondary setMainPhoto" data-index="${i}" style="padding:7px 9px;font-size:.78rem">Definir como principal</button>`}<button type="button" class="btn secondary deleteOnePhoto" data-index="${i}" style="padding:7px 9px;font-size:.78rem">Excluir foto</button></div>`).join('');
    c.innerHTML=`<h3>${p.nome||'Produto'}</h3><p class="muted">${(p.imageUrls||[]).length} foto(s)</p><input type="file" accept="image/*" multiple><button class="btn addMore" style="margin-top:10px">Adicionar fotos</button><div class="image-preview" style="align-items:flex-start">${gallery||'<span class="muted">Nenhuma foto cadastrada.</span>'}</div><div class="muted msg"></div>`;
    c.querySelector('.addMore').onclick=async()=>{const input=c.querySelector('input'),files=[...input.files];if(!files.length)return;c.querySelector('.msg').textContent='Enviando...';try{const up=await upload(files);await updateDoc(doc(db,'products',p.id),{imageUrls:[...(p.imageUrls||[]),...up.urls],imagePaths:[...(p.imagePaths||[]),...up.paths],updatedAt:serverTimestamp()});box.remove();setTimeout(enhance,200)}catch(e){c.querySelector('.msg').textContent='Erro: '+e.message}};
+   c.querySelectorAll('.setMainPhoto').forEach(btn=>btn.onclick=()=>setMainPhoto(p,Number(btn.dataset.index),c,box));
    c.querySelectorAll('.deleteOnePhoto').forEach(btn=>btn.onclick=()=>removePhoto(p,Number(btn.dataset.index),c,box));
    box.appendChild(c)
  });
