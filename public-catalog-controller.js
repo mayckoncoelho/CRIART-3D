@@ -76,6 +76,9 @@ function mountHeroCarousel(){
   }
   const car=document.querySelector('#app .hero-side-carousel');
   if(!car) return;
+  const signature = hs.map(b=>`${b.id}:${b.imageUrl}`).join('|');
+  if(car.dataset.bannerSignature === signature) return;
+  car.dataset.bannerSignature = signature;
   if(heroIndex>=hs.length) heroIndex=0;
   car.innerHTML=hs.map((b,i)=>`<div class="hero-side-slide ${i===heroIndex?'active':''}" style="background-image:url('${esc(b.imageUrl)}')" role="img" aria-label="${esc(b.titulo||'Imagem em destaque')}"></div>`).join('')+
     (hs.length>1?`<button class="hero-side-arrow hero-side-prev" aria-label="Anterior">‹</button><button class="hero-side-arrow hero-side-next" aria-label="Próximo">›</button><div class="hero-side-dots">${hs.map((_,i)=>`<button class="hero-side-dot ${i===heroIndex?'active':''}" data-i="${i}" aria-label="Imagem ${i+1}"></button>`).join('')}</div>`:'');
@@ -84,6 +87,7 @@ function mountHeroCarousel(){
   car.querySelector('.hero-side-next')?.addEventListener('click',()=>show(heroIndex+1));
   car.querySelectorAll('.hero-side-dot').forEach(d=>d.addEventListener('click',()=>show(Number(d.dataset.i))));
   clearInterval(heroTimer);
+  heroTimer=null;
   if(hs.length>1) heroTimer=setInterval(()=>show(heroIndex+1),5000);
 }
 
