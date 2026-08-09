@@ -154,18 +154,20 @@ async function enhanceAdminCards(){
   let products=[];
   try{products=await getProducts()}catch(e){console.error('Falha ao preparar editor completo:',e);return;}
   cards.forEach(card=>{
-    if(card.querySelector('.full-edit-product'))return;
     const oldEdit=card.querySelector('.edit-product');
-    const id=oldEdit?.dataset.id||card.querySelector('[data-id]')?.dataset.id;
+    const id=oldEdit?.dataset.id||card.querySelector('.del-product')?.dataset.id||card.querySelector('[data-id]')?.dataset.id;
     const product=products.find(p=>p.id===id);
     if(!product)return;
-    const btn=document.createElement('button');
-    btn.type='button';
-    btn.className='btn full-edit-product';
-    btn.textContent='Editar anúncio completo';
-    btn.onclick=()=>openEditor(product);
-    const actions=card.querySelector('.actions')||card;
-    actions.prepend(btn);
+    if(!card.querySelector('.full-edit-product')){
+      const btn=document.createElement('button');
+      btn.type='button';
+      btn.className='btn full-edit-product';
+      btn.textContent='Editar anúncio';
+      btn.onclick=()=>openEditor(product);
+      const actions=card.querySelector('.actions')||card;
+      actions.prepend(btn);
+    }
+    oldEdit?.remove();
   });
 }
 
