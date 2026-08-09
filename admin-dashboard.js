@@ -45,152 +45,134 @@ async function getCollection(name){
 }
 
 function nextElement(el){ return el?.nextElementSibling || null; }
-
-function makePanel(name){
-  const p = document.createElement('section');
-  p.className = 'criart-admin-panel';
-  p.dataset.panel = name;
-  return p;
-}
-
-function moveIf(node, target){ if(node && target) target.appendChild(node); }
-
-function findHeading(root, text){
-  return [...root.querySelectorAll('h2')].find(h => h.textContent.trim().toLowerCase() === text.toLowerCase());
-}
+function makePanel(name){ const p=document.createElement('section'); p.className='criart-admin-panel'; p.dataset.panel=name; return p; }
+function moveIf(node,target){ if(node&&target) target.appendChild(node); }
+function findHeading(root,text){ return [...root.querySelectorAll('h2')].find(h=>h.textContent.trim().toLowerCase()===text.toLowerCase()); }
 
 function openModal(html){
-  const overlay = document.createElement('div');
-  overlay.className = 'criart-editor-overlay';
-  overlay.innerHTML = `<section class="criart-editor-modal">${html}</section>`;
+  const overlay=document.createElement('div');
+  overlay.className='criart-editor-overlay';
+  overlay.innerHTML=`<section class="criart-editor-modal">${html}</section>`;
   document.body.appendChild(overlay);
-  const close = () => overlay.remove();
-  overlay.addEventListener('click', e => { if(e.target === overlay) close(); });
-  overlay.querySelectorAll('[data-close-modal]').forEach(b => b.onclick = close);
-  return { overlay, close };
+  const close=()=>overlay.remove();
+  overlay.addEventListener('click',e=>{if(e.target===overlay)close();});
+  overlay.querySelectorAll('[data-close-modal]').forEach(b=>b.onclick=close);
+  return {overlay,close};
 }
 
 function editCoupon(coupon){
-  const {overlay, close} = openModal(`
+  const {overlay,close}=openModal(`
     <div class="criart-editor-head"><div><h2>Editar cupom</h2><p class="muted">Altere código, desconto e status.</p></div><button class="btn secondary" data-close-modal>Fechar</button></div>
     <div class="field"><label>Código</label><input id="editCouponCode" value="${String(coupon.codigo||'').replace(/"/g,'&quot;')}"></div>
     <div class="field"><label>Desconto (%)</label><input id="editCouponValue" type="number" min="0" max="100" value="${Number(coupon.valor)||0}"></div>
     <label class="check"><input id="editCouponActive" type="checkbox" ${coupon.ativo===false?'':'checked'}> Cupom ativo</label>
     <div id="editCouponMsg" class="muted"></div>
-    <div class="criart-editor-actions"><button class="btn" id="saveCouponEdit">Salvar alterações</button><button class="btn secondary" data-close-modal>Cancelar</button></div>
-  `);
-  overlay.querySelector('#saveCouponEdit').onclick = async () => {
-    const code = overlay.querySelector('#editCouponCode').value.trim().toUpperCase();
-    const value = Number(overlay.querySelector('#editCouponValue').value);
-    const msg = overlay.querySelector('#editCouponMsg');
-    if(!code || !Number.isFinite(value)){ msg.textContent = 'Informe código e desconto válidos.'; return; }
+    <div class="criart-editor-actions"><button class="btn" id="saveCouponEdit">Salvar alterações</button><button class="btn secondary" data-close-modal>Cancelar</button></div>`);
+  overlay.querySelector('#saveCouponEdit').onclick=async()=>{
+    const code=overlay.querySelector('#editCouponCode').value.trim().toUpperCase();
+    const value=Number(overlay.querySelector('#editCouponValue').value);
+    const msg=overlay.querySelector('#editCouponMsg');
+    if(!code||!Number.isFinite(value)){msg.textContent='Informe código e desconto válidos.';return;}
     try{
-      msg.textContent = 'Salvando...';
-      await updateDoc(doc(db,'coupons',coupon.id), { codigo:code, valor:value, ativo:overlay.querySelector('#editCouponActive').checked, updatedAt:serverTimestamp() });
+      msg.textContent='Salvando...';
+      await updateDoc(doc(db,'coupons',coupon.id),{codigo:code,valor:value,ativo:overlay.querySelector('#editCouponActive').checked,updatedAt:serverTimestamp()});
       close(); location.reload();
-    }catch(e){ msg.textContent = 'Erro ao salvar: ' + (e?.message || e); }
+    }catch(e){msg.textContent='Erro ao salvar: '+(e?.message||e);}
   };
 }
 
 function editBanner(banner){
-  const {overlay, close} = openModal(`
+  const {overlay,close}=openModal(`
     <div class="criart-editor-head"><div><h2>Editar banner</h2><p class="muted">Altere conteúdo, imagem e status.</p></div><button class="btn secondary" data-close-modal>Fechar</button></div>
     <div class="field"><label>Título</label><input id="editBannerTitle" value="${String(banner.titulo||'').replace(/"/g,'&quot;')}"></div>
     <div class="field"><label>Texto</label><textarea id="editBannerText"></textarea></div>
     <div class="field"><label>Substituir imagem</label><input id="editBannerImage" type="file" accept="image/*"><small class="muted">Deixe vazio para manter a imagem atual.</small></div>
     <label class="check"><input id="editBannerActive" type="checkbox" ${banner.ativo===false?'':'checked'}> Banner ativo</label>
     <div id="editBannerMsg" class="muted"></div>
-    <div class="criart-editor-actions"><button class="btn" id="saveBannerEdit">Salvar alterações</button><button class="btn secondary" data-close-modal>Cancelar</button></div>
-  `);
-  overlay.querySelector('#editBannerText').value = banner.texto || '';
-  overlay.querySelector('#saveBannerEdit').onclick = async () => {
-    const msg = overlay.querySelector('#editBannerMsg');
-    const file = overlay.querySelector('#editBannerImage').files?.[0];
+    <div class="criart-editor-actions"><button class="btn" id="saveBannerEdit">Salvar alterações</button><button class="btn secondary" data-close-modal>Cancelar</button></div>`);
+  overlay.querySelector('#editBannerText').value=banner.texto||'';
+  overlay.querySelector('#saveBannerEdit').onclick=async()=>{
+    const msg=overlay.querySelector('#editBannerMsg');
+    const file=overlay.querySelector('#editBannerImage').files?.[0];
     try{
-      msg.textContent = 'Salvando...';
-      let imageUrl = banner.imageUrl || '';
-      let imagePath = banner.imagePath || '';
+      msg.textContent='Salvando...';
+      let imageUrl=banner.imageUrl||'', imagePath=banner.imagePath||'';
       if(file){
-        const newPath = `banners/${Date.now()}-${Math.random().toString(36).slice(2)}-${safeName(file.name)}`;
-        const storageRef = ref(storage,newPath);
+        const newPath=`banners/${Date.now()}-${Math.random().toString(36).slice(2)}-${safeName(file.name)}`;
+        const storageRef=ref(storage,newPath);
         await uploadBytes(storageRef,file,{contentType:file.type});
-        imageUrl = await getDownloadURL(storageRef);
-        if(imagePath){ try{ await deleteObject(ref(storage,imagePath)); }catch{} }
-        imagePath = newPath;
+        imageUrl=await getDownloadURL(storageRef);
+        if(imagePath){try{await deleteObject(ref(storage,imagePath));}catch{}}
+        imagePath=newPath;
       }
-      await updateDoc(doc(db,'banners',banner.id), {
-        titulo:overlay.querySelector('#editBannerTitle').value.trim(),
-        texto:overlay.querySelector('#editBannerText').value.trim(),
-        ativo:overlay.querySelector('#editBannerActive').checked,
-        imageUrl,imagePath,updatedAt:serverTimestamp()
-      });
+      await updateDoc(doc(db,'banners',banner.id),{titulo:overlay.querySelector('#editBannerTitle').value.trim(),texto:overlay.querySelector('#editBannerText').value.trim(),ativo:overlay.querySelector('#editBannerActive').checked,imageUrl,imagePath,updatedAt:serverTimestamp()});
       close(); location.reload();
-    }catch(e){ msg.textContent = 'Erro ao salvar: ' + (e?.message || e); }
+    }catch(e){msg.textContent='Erro ao salvar: '+(e?.message||e);}
   };
 }
 
 async function enhanceCouponRows(panel){
-  let coupons=[];
-  try{ coupons = await getCollection('coupons'); }catch(e){ console.error(e); return; }
-  panel.querySelectorAll('.del-coupon').forEach(del => {
-    if(del.parentElement?.querySelector('.criart-coupon-edit')) return;
-    const c = coupons.find(x => x.id === del.dataset.id);
-    if(!c) return;
-    const wrap = document.createElement('div');
-    wrap.className = 'criart-inline-actions';
-    const edit = document.createElement('button'); edit.className='criart-mini-btn primary criart-coupon-edit'; edit.textContent='Editar'; edit.onclick=()=>editCoupon(c);
-    const toggle = document.createElement('button'); toggle.className='criart-mini-btn'; toggle.textContent=c.ativo===false?'Reativar':'Pausar'; toggle.onclick=async()=>{ await updateDoc(doc(db,'coupons',c.id),{ativo:c.ativo===false,updatedAt:serverTimestamp()}); location.reload(); };
-    const originalParent = del.parentElement;
-    originalParent.insertBefore(wrap, del);
-    wrap.append(edit,toggle,del);
+  let coupons=[]; try{coupons=await getCollection('coupons');}catch(e){console.error(e);return;}
+  panel.querySelectorAll('.del-coupon').forEach(del=>{
+    if(del.parentElement?.querySelector('.criart-coupon-edit'))return;
+    const c=coupons.find(x=>x.id===del.dataset.id); if(!c)return;
+    const wrap=document.createElement('div'); wrap.className='criart-inline-actions';
+    const edit=document.createElement('button'); edit.className='criart-mini-btn primary criart-coupon-edit'; edit.textContent='Editar'; edit.onclick=()=>editCoupon(c);
+    const toggle=document.createElement('button'); toggle.className='criart-mini-btn'; toggle.textContent=c.ativo===false?'Reativar':'Pausar'; toggle.onclick=async()=>{await updateDoc(doc(db,'coupons',c.id),{ativo:c.ativo===false,updatedAt:serverTimestamp()});location.reload();};
+    const originalParent=del.parentElement; originalParent.insertBefore(wrap,del); wrap.append(edit,toggle,del);
   });
 }
 
 async function enhanceBannerCards(panel){
-  let banners=[];
-  try{ banners = await getCollection('banners'); }catch(e){ console.error(e); return; }
-  panel.querySelectorAll('.del-banner').forEach(del => {
-    if(del.parentElement?.querySelector('.criart-banner-edit')) return;
-    const b = banners.find(x => x.id === del.dataset.id);
-    if(!b) return;
-    const status = document.createElement('span');
-    status.className='criart-status'; status.textContent=b.ativo===false?'Pausado':'Ativo';
+  let banners=[]; try{banners=await getCollection('banners');}catch(e){console.error(e);return;}
+  panel.querySelectorAll('.del-banner').forEach(del=>{
+    if(del.parentElement?.querySelector('.criart-banner-edit'))return;
+    const b=banners.find(x=>x.id===del.dataset.id); if(!b)return;
+    const status=document.createElement('span'); status.className='criart-status'; status.textContent=b.ativo===false?'Pausado':'Ativo';
     del.parentElement.querySelector('h3')?.appendChild(status);
-    const wrap = document.createElement('div'); wrap.className='criart-inline-actions';
-    const edit = document.createElement('button'); edit.className='criart-mini-btn primary criart-banner-edit'; edit.textContent='Editar'; edit.onclick=()=>editBanner(b);
-    const toggle = document.createElement('button'); toggle.className='criart-mini-btn'; toggle.textContent=b.ativo===false?'Reativar':'Pausar'; toggle.onclick=async()=>{ await updateDoc(doc(db,'banners',b.id),{ativo:b.ativo===false,updatedAt:serverTimestamp()}); location.reload(); };
-    del.parentElement.insertBefore(wrap,del);
-    wrap.append(edit,toggle,del);
+    const wrap=document.createElement('div'); wrap.className='criart-inline-actions';
+    const edit=document.createElement('button'); edit.className='criart-mini-btn primary criart-banner-edit'; edit.textContent='Editar'; edit.onclick=()=>editBanner(b);
+    const toggle=document.createElement('button'); toggle.className='criart-mini-btn'; toggle.textContent=b.ativo===false?'Reativar':'Pausar'; toggle.onclick=async()=>{await updateDoc(doc(db,'banners',b.id),{ativo:b.ativo===false,updatedAt:serverTimestamp()});location.reload();};
+    del.parentElement.insertBefore(wrap,del); wrap.append(edit,toggle,del);
   });
 }
 
 async function organizeAdmin(){
-  if(location.pathname !== '/admin' || !auth.currentUser) return;
-  const root = document.querySelector('#app');
-  if(!root || root.dataset.adminDashboardReady === '1') return;
-  const head = root.querySelector('.admin-head');
-  const grid = root.querySelector('.admin-grid');
-  if(!head || !grid || grid.children.length < 3) return;
+  if(location.pathname!='/admin'||!auth.currentUser)return;
+  const root=document.querySelector('#app');
+  if(!root)return;
+
+  // O app.js redesenha somente o conteúdo de #app após cada gravação.
+  // A marca data-* permanece no elemento pai; portanto só consideramos o
+  // dashboard pronto se as abas novas realmente ainda existirem no DOM.
+  if(root.querySelector('.criart-admin-tabs')){
+    root.dataset.adminDashboardReady='1';
+    return;
+  }
+  root.dataset.adminDashboardReady='0';
+
+  const head=root.querySelector('.admin-head');
+  const grid=root.querySelector('.admin-grid');
+  if(!head||!grid||grid.children.length<3)return;
 
   ensureStyles();
-  root.dataset.adminDashboardReady = '1';
 
-  const productForm = grid.children[0];
-  const couponForm = grid.children[1];
-  const bannerForm = grid.children[2];
+  const productForm=grid.children[0];
+  const couponForm=grid.children[1];
+  const bannerForm=grid.children[2];
+  const productsH=findHeading(root,'Produtos'), productsList=nextElement(productsH);
+  const couponsH=findHeading(root,'Cupons'), couponsList=nextElement(couponsH);
+  const bannersH=findHeading(root,'Banners'), bannersList=nextElement(bannersH);
+  const bulkH=findHeading(root,'Cadastro em massa'), bulkBox=nextElement(bulkH);
 
-  const productsH = findHeading(root,'Produtos'); const productsList = nextElement(productsH);
-  const couponsH = findHeading(root,'Cupons'); const couponsList = nextElement(couponsH);
-  const bannersH = findHeading(root,'Banners'); const bannersList = nextElement(bannersH);
-  const bulkH = findHeading(root,'Cadastro em massa'); const bulkBox = nextElement(bulkH);
-
-  const tabs = document.createElement('div'); tabs.className='criart-admin-tabs';
-  const names=[['products','Produtos'],['banners','Banners'],['coupons','Cupons']];
-  names.forEach(([key,label])=>{const b=document.createElement('button');b.className='criart-admin-tab';b.dataset.target=key;b.textContent=label;tabs.appendChild(b)});
-  const calc=document.createElement('button');calc.className='criart-admin-tab';calc.textContent='Calculadora';calc.onclick=()=>location.assign('/calculadora');tabs.appendChild(calc);
+  const tabs=document.createElement('div'); tabs.className='criart-admin-tabs';
+  [['products','Produtos'],['banners','Banners'],['coupons','Cupons']].forEach(([key,label])=>{
+    const b=document.createElement('button'); b.className='criart-admin-tab'; b.dataset.target=key; b.textContent=label; tabs.appendChild(b);
+  });
+  const calc=document.createElement('button'); calc.className='criart-admin-tab'; calc.textContent='Calculadora'; calc.onclick=()=>location.assign('/calculadora'); tabs.appendChild(calc);
   head.after(tabs);
 
-  const host = document.createElement('div'); tabs.after(host);
+  const host=document.createElement('div'); tabs.after(host);
   const productPanel=makePanel('products'), bannerPanel=makePanel('banners'), couponPanel=makePanel('coupons');
   host.append(productPanel,bannerPanel,couponPanel);
 
@@ -205,12 +187,20 @@ async function organizeAdmin(){
     sessionStorage.setItem('criartAdminTab',key);
   }
   tabs.querySelectorAll('[data-target]').forEach(b=>b.onclick=()=>activate(b.dataset.target));
-  activate(sessionStorage.getItem('criartAdminTab') || 'products');
+  activate(sessionStorage.getItem('criartAdminTab')||'products');
 
+  root.dataset.adminDashboardReady='1';
   await enhanceCouponRows(couponPanel);
   await enhanceBannerCards(bannerPanel);
 }
 
-const observer = new MutationObserver(()=>setTimeout(organizeAdmin,40));
-observer.observe(document.body,{childList:true,subtree:true});
+let scheduled=false;
+const scheduleOrganize=()=>{
+  if(scheduled)return;
+  scheduled=true;
+  setTimeout(async()=>{scheduled=false;await organizeAdmin();},40);
+};
+
+const observer=new MutationObserver(scheduleOrganize);
+observer.observe(document.querySelector('#app')||document.body,{childList:true,subtree:true});
 setTimeout(organizeAdmin,500);
