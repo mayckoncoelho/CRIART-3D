@@ -1,0 +1,32 @@
+{
+  "name": "CRIART 3D",
+  "short_name": "CRIART 3D",
+  "description": "Você imagina, a gente cria. Produtos e projetos personalizados em impressão 3D.",
+  "lang": "pt-BR",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0b0d10",
+  "theme_color": "#f59e0b",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/pwa-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Produtos",
+      "short_name": "Produtos",
+      "url": "/produtos"
+    },
+    {
+      "name": "Painel administrativo",
+      "short_name": "Admin",
+      "url": "/admin"
+    }
+  ]
+}
