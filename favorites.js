@@ -18,9 +18,10 @@ function getFavorites(){
   }catch{return [];}
 }
 function saveFavorites(ids){
-  localStorage.setItem(STORAGE_KEY, JSON.stringify([...new Set(ids.map(String))]));
+  const unique=[...new Set(ids.map(String))];
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(unique));
   syncUI();
-  window.dispatchEvent(new CustomEvent('criart:favorites-changed',{detail:{ids:getFavorites()}}));
+  window.dispatchEvent(new CustomEvent('criart:favorites-changed',{detail:{ids:unique}}));
 }
 function isFavorite(id){ return getFavorites().includes(String(id)); }
 function toggleFavorite(id){
@@ -39,7 +40,7 @@ function ensureStyles(){
   .fav-card-btn{position:absolute;top:12px;right:12px;z-index:8;width:40px;height:40px;border-radius:999px;border:1px solid rgba(255,255,255,.24);background:rgba(8,10,12,.76);color:#fff;display:grid;place-items:center;font-size:22px;cursor:pointer;backdrop-filter:blur(6px);transition:.18s ease}
   .fav-card-btn:hover{transform:scale(1.05)}.fav-card-btn.active{color:#ff5a68;background:rgba(40,10,14,.88);border-color:rgba(255,90,104,.55)}
   .product-card{position:relative}.fav-detail-btn{display:inline-flex;align-items:center;gap:8px}.fav-detail-btn.active{border-color:#ff5a68;color:#ff7884}
-  .fav-top-btn{display:inline-flex!important;align-items:center;gap:7px;background:transparent;border:0;color:inherit;font:inherit;cursor:pointer;padding:0}.fav-count{min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#f59e0b;color:#111;display:inline-grid;place-items:center;font-size:12px;font-weight:800}
+  .fav-top-btn{display:inline-flex!important;align-items:center;gap:7px;background:transparent;border:0;color:inherit;font:inherit;cursor:pointer;padding:0}.fav-top-count{min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#f59e0b;color:#111;display:inline-grid;place-items:center;font-size:12px;font-weight:800}
   .fav-overlay{position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.62);opacity:0;pointer-events:none;transition:opacity .2s}.fav-overlay.open{opacity:1;pointer-events:auto}
   .fav-drawer{position:absolute;right:0;top:0;height:100%;width:min(440px,94vw);background:#101419;border-left:1px solid rgba(255,255,255,.12);padding:22px;overflow:auto;transform:translateX(100%);transition:transform .22s ease;box-shadow:-20px 0 50px rgba(0,0,0,.4)}.fav-overlay.open .fav-drawer{transform:translateX(0)}
   .fav-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}.fav-head h2{margin:0}.fav-close{width:40px;height:40px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:#171c22;color:#fff;cursor:pointer;font-size:22px}
@@ -62,7 +63,7 @@ function ensureTopButton(){
   const btn=document.createElement('button');
   btn.type='button';
   btn.className='fav-top-btn';
-  btn.innerHTML='♡ Favoritos <span class="fav-count">0</span>';
+  btn.innerHTML='♡ Favoritos <span class="fav-top-count">0</span>';
   btn.addEventListener('click',openDrawer);
   nav.appendChild(btn);
 }
@@ -124,7 +125,7 @@ function mountDetailButton(){
   const btn=document.createElement('button');
   btn.type='button';
   btn.className='btn secondary fav-detail-btn';
-  btn.addEventListener('click',()=>toggleFavorite(id));
+  btn.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();toggleFavorite(id);});
   actions.appendChild(btn);
 }
 
@@ -132,7 +133,8 @@ function syncUI(){
   ensureTopButton();
   ensureDrawer();
   const ids=getFavorites();
-  document.querySelectorAll('.fav-count').forEach(el=>el.textContent=String(ids.length));
+  const topCount=document.querySelector('.fav-top-btn .fav-top-count');
+  if(topCount) topCount.textContent=String(ids.length);
   document.querySelectorAll('.fav-card-btn').forEach(btn=>{
     const id=btn.closest('.product-card')?.dataset.productId;
     const active=id&&ids.includes(String(id));
