@@ -43,7 +43,7 @@ function ensureStyles(){
   .fav-overlay{position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.62);opacity:0;pointer-events:none;transition:opacity .2s}.fav-overlay.open{opacity:1;pointer-events:auto}
   .fav-drawer{position:absolute;right:0;top:0;height:100%;width:min(440px,94vw);background:#101419;border-left:1px solid rgba(255,255,255,.12);padding:22px;overflow:auto;transform:translateX(100%);transition:transform .22s ease;box-shadow:-20px 0 50px rgba(0,0,0,.4)}.fav-overlay.open .fav-drawer{transform:translateX(0)}
   .fav-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}.fav-head h2{margin:0}.fav-close{width:40px;height:40px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:#171c22;color:#fff;cursor:pointer;font-size:22px}
-  .fav-list{display:grid;gap:12px}.fav-item{display:grid;grid-template-columns:88px minmax(0,1fr);gap:13px;padding:12px;border:1px solid rgba(255,255,255,.1);border-radius:14px;background:#14191f}.fav-item img,.fav-item .fav-placeholder{width:88px;height:88px;object-fit:cover;border-radius:10px;background:#0b0e12}.fav-item h3{font-size:1rem;margin:0 0 5px}.fav-item .price{font-size:1rem;margin:0 0 9px}.fav-item-actions{display:flex;gap:8px;flex-wrap:wrap}.fav-mini-btn{border:1px solid rgba(255,255,255,.14);background:#1a2027;color:#fff;border-radius:9px;padding:7px 9px;cursor:pointer;font-size:.82rem}.fav-empty{padding:28px 10px;text-align:center;color:#aeb5bd}
+  .fav-list{display:grid;gap:12px}.fav-item{display:grid;grid-template-columns:88px minmax(0,1fr);gap:13px;padding:12px;border:1px solid rgba(255,255,255,.1);border-radius:14px;background:#14191f}.fav-item img,.fav-item .fav-placeholder{width:88px;height:88px;object-fit:cover;border-radius:10px;background:#0b0e12}.fav-item h3{font-size:1rem;margin:0 0 5px}.fav-item .price{font-size:1rem;margin:0 0 9px}.fav-item-actions{display:flex;gap:8px;flex-wrap:wrap}.fav-mini-btn{display:inline-block;border:1px solid rgba(255,255,255,.14);background:#1a2027;color:#fff;border-radius:9px;padding:7px 9px;cursor:pointer;font-size:.82rem;text-decoration:none}.fav-empty{padding:28px 10px;text-align:center;color:#aeb5bd}
   @media(max-width:720px){.fav-card-btn{width:38px;height:38px;top:9px;right:9px}}
   `;
   document.head.appendChild(style);
@@ -87,11 +87,8 @@ async function renderDrawer(){
   if(!list)return;
   const items=ids.map(id=>productCache.find(p=>p.id===id)).filter(p=>p&&p.ativo!==false);
   if(!items.length){list.innerHTML='<div class="fav-empty">Você ainda não adicionou nenhum produto aos favoritos.</div>';return;}
-  list.innerHTML=items.map(p=>`<article class="fav-item" data-id="${esc(p.id)}">${p.imageUrls?.[0]?`<img src="${esc(p.imageUrls[0])}" alt="${esc(p.nome||'Produto')}">`:'<div class="fav-placeholder"></div>'}<div><h3>${esc(p.nome||'Produto')}</h3><div class="price">${money(p.preco)}</div><div class="fav-item-actions"><button class="fav-mini-btn fav-open" type="button">Ver produto</button><button class="fav-mini-btn fav-remove" type="button">Remover</button></div></div></article>`).join('');
-  list.querySelectorAll('.fav-open').forEach(btn=>btn.addEventListener('click',()=>{
-    const id=btn.closest('.fav-item')?.dataset.id;
-    if(id) location.href=`/produtos?produto=${encodeURIComponent(id)}`;
-  }));
+  list.innerHTML=items.map(p=>`<article class="fav-item" data-id="${esc(p.id)}">${p.imageUrls?.[0]?`<img src="${esc(p.imageUrls[0])}" alt="${esc(p.nome||'Produto')}">`:'<div class="fav-placeholder"></div>'}<div><h3>${esc(p.nome||'Produto')}</h3><div class="price">${money(p.preco)}</div><div class="fav-item-actions"><a class="fav-mini-btn fav-open" href="/produto/${encodeURIComponent(p.id)}">Ver produto</a><button class="fav-mini-btn fav-remove" type="button">Remover</button></div></div></article>`).join('');
+  list.querySelectorAll('.fav-open').forEach(link=>link.addEventListener('click',()=>closeDrawer()));
   list.querySelectorAll('.fav-remove').forEach(btn=>btn.addEventListener('click',()=>{
     const id=btn.closest('.fav-item')?.dataset.id;
     if(id){toggleFavorite(id);renderDrawer();}
