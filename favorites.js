@@ -23,7 +23,6 @@ function saveFavorites(ids){
   syncUI();
   window.dispatchEvent(new CustomEvent('criart:favorites-changed',{detail:{ids:unique}}));
 }
-function isFavorite(id){ return getFavorites().includes(String(id)); }
 function toggleFavorite(id){
   if(!id) return;
   const ids=getFavorites();
@@ -31,15 +30,27 @@ function toggleFavorite(id){
   const next=ids.includes(key)?ids.filter(x=>x!==key):[...ids,key];
   saveFavorites(next);
 }
+function cardProductId(card){
+  if(card?.dataset?.productId) return String(card.dataset.productId);
+  const link=card?.querySelector('a[href^="/produto/"]');
+  if(link){
+    try{
+      const u=new URL(link.href,location.origin);
+      const m=u.pathname.match(/^\/produto\/([^/]+)$/);
+      if(m) return decodeURIComponent(m[1]);
+    }catch{}
+  }
+  return '';
+}
 
 function ensureStyles(){
   if(document.querySelector('#criartFavoritesStyles')) return;
   const style=document.createElement('style');
   style.id='criartFavoritesStyles';
   style.textContent=`
-  .fav-card-btn{position:absolute;top:12px;right:12px;z-index:8;width:40px;height:40px;border-radius:999px;border:1px solid rgba(255,255,255,.24);background:rgba(8,10,12,.76);color:#fff;display:grid;place-items:center;font-size:22px;cursor:pointer;backdrop-filter:blur(6px);transition:.18s ease}
+  .fav-card-btn{position:absolute;top:12px;right:12px;z-index:20;width:40px;height:40px;border-radius:999px;border:1px solid rgba(255,255,255,.24);background:rgba(8,10,12,.76);color:#fff;display:grid!important;place-items:center;font-size:22px;cursor:pointer;backdrop-filter:blur(6px);transition:.18s ease}
   .fav-card-btn:hover{transform:scale(1.05)}.fav-card-btn.active{color:#ff5a68;background:rgba(40,10,14,.88);border-color:rgba(255,90,104,.55)}
-  .product-card{position:relative}.fav-detail-btn{display:inline-flex;align-items:center;gap:8px}.fav-detail-btn.active{border-color:#ff5a68;color:#ff7884}
+  .product-card{position:relative!important}.fav-detail-btn{display:inline-flex!important;align-items:center;gap:8px}.fav-detail-btn.active{border-color:#ff5a68;color:#ff7884}
   .fav-top-btn{display:inline-flex!important;align-items:center;gap:7px;background:transparent;border:0;color:inherit;font:inherit;cursor:pointer;padding:0}.fav-top-count{min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#f59e0b;color:#111;display:inline-grid;place-items:center;font-size:12px;font-weight:800}
   .fav-overlay{position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.62);opacity:0;pointer-events:none;transition:opacity .2s}.fav-overlay.open{opacity:1;pointer-events:auto}
   .fav-drawer{position:absolute;right:0;top:0;height:100%;width:min(440px,94vw);background:#101419;border-left:1px solid rgba(255,255,255,.12);padding:22px;overflow:auto;transform:translateX(100%);transition:transform .22s ease;box-shadow:-20px 0 50px rgba(0,0,0,.4)}.fav-overlay.open .fav-drawer{transform:translateX(0)}
@@ -67,7 +78,6 @@ function ensureTopButton(){
   btn.addEventListener('click',openDrawer);
   nav.appendChild(btn);
 }
-
 function ensureDrawer(){
   if(document.querySelector('#favOverlay')) return;
   const overlay=document.createElement('div');
@@ -79,7 +89,6 @@ function ensureDrawer(){
   document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer();});
   document.body.appendChild(overlay);
 }
-
 async function renderDrawer(){
   ensureDrawer();
   if(!productCache.length) await loadProducts();
@@ -90,23 +99,17 @@ async function renderDrawer(){
   if(!items.length){list.innerHTML='<div class="fav-empty">Você ainda não adicionou nenhum produto aos favoritos.</div>';return;}
   list.innerHTML=items.map(p=>`<article class="fav-item" data-id="${esc(p.id)}">${p.imageUrls?.[0]?`<img src="${esc(p.imageUrls[0])}" alt="${esc(p.nome||'Produto')}">`:'<div class="fav-placeholder"></div>'}<div><h3>${esc(p.nome||'Produto')}</h3><div class="price">${money(p.preco)}</div><div class="fav-item-actions"><a class="fav-mini-btn fav-open" href="/produto/${encodeURIComponent(p.id)}">Ver produto</a><button class="fav-mini-btn fav-remove" type="button">Remover</button></div></div></article>`).join('');
   list.querySelectorAll('.fav-open').forEach(link=>link.addEventListener('click',()=>closeDrawer()));
-  list.querySelectorAll('.fav-remove').forEach(btn=>btn.addEventListener('click',()=>{
-    const id=btn.closest('.fav-item')?.dataset.id;
-    if(id){toggleFavorite(id);renderDrawer();}
-  }));
+  list.querySelectorAll('.fav-remove').forEach(btn=>btn.addEventListener('click',()=>{const id=btn.closest('.fav-item')?.dataset.id;if(id){toggleFavorite(id);renderDrawer();}}));
 }
-
-async function openDrawer(){
-  ensureDrawer();
-  await renderDrawer();
-  document.querySelector('#favOverlay')?.classList.add('open');
-}
+async function openDrawer(){ensureDrawer();await renderDrawer();document.querySelector('#favOverlay')?.classList.add('open');}
 function closeDrawer(){document.querySelector('#favOverlay')?.classList.remove('open');}
 
 function mountCardButtons(){
-  document.querySelectorAll('.product-card[data-product-id]').forEach(card=>{
-    const id=card.dataset.productId;
-    if(!id || card.querySelector('.fav-card-btn')) return;
+  document.querySelectorAll('.product-card').forEach(card=>{
+    const id=cardProductId(card);
+    if(!id) return;
+    if(!card.dataset.productId) card.dataset.productId=id;
+    if(card.querySelector('.fav-card-btn')) return;
     const btn=document.createElement('button');
     btn.type='button';
     btn.className='fav-card-btn';
@@ -115,7 +118,6 @@ function mountCardButtons(){
     card.appendChild(btn);
   });
 }
-
 function mountDetailButton(){
   const layout=document.querySelector('.product-detail-layout[data-product-id]');
   if(!layout || layout.querySelector('.fav-detail-btn')) return;
@@ -128,7 +130,6 @@ function mountDetailButton(){
   btn.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();toggleFavorite(id);});
   actions.appendChild(btn);
 }
-
 function syncUI(){
   ensureTopButton();
   ensureDrawer();
@@ -136,7 +137,7 @@ function syncUI(){
   const topCount=document.querySelector('.fav-top-btn .fav-top-count');
   if(topCount) topCount.textContent=String(ids.length);
   document.querySelectorAll('.fav-card-btn').forEach(btn=>{
-    const id=btn.closest('.product-card')?.dataset.productId;
+    const id=cardProductId(btn.closest('.product-card'));
     const active=id&&ids.includes(String(id));
     btn.classList.toggle('active',!!active);
     btn.textContent=active?'♥':'♡';
@@ -150,20 +151,8 @@ function syncUI(){
     btn.innerHTML=active?'♥ Favoritado':'♡ Adicionar aos favoritos';
   });
 }
-
-function enhance(){
-  ensureStyles();
-  ensureTopButton();
-  ensureDrawer();
-  mountCardButtons();
-  mountDetailButton();
-  syncUI();
-}
-
-const observer=new MutationObserver(()=>{
-  clearTimeout(observerTimer);
-  observerTimer=setTimeout(enhance,40);
-});
+function enhance(){ensureStyles();ensureTopButton();ensureDrawer();mountCardButtons();mountDetailButton();syncUI();}
+const observer=new MutationObserver(()=>{clearTimeout(observerTimer);observerTimer=setTimeout(enhance,40);});
 observer.observe(document.documentElement,{subtree:true,childList:true});
 window.addEventListener('pageshow',enhance);
 window.addEventListener('storage',e=>{if(e.key===STORAGE_KEY)syncUI();});
