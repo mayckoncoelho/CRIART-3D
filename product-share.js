@@ -2,8 +2,9 @@ function currentProductDetail(){
   const app=document.querySelector('#app');
   const layout=app?.querySelector('.product-detail-layout');
   const title=layout?.querySelector('.product-detail-info h1')?.textContent?.trim();
+  const productId=layout?.dataset.productId||'';
   if(!layout||!title)return null;
-  return {app,layout,title};
+  return {app,layout,title,productId};
 }
 
 function ensureStyle(){
@@ -17,11 +18,19 @@ function ensureStyle(){
   document.head.appendChild(style);
 }
 
-async function shareProduct(title,button,status){
+function publicShareUrl(productId){
+  if(!productId)return location.href;
+  const u=new URL('/produtos',location.origin);
+  u.searchParams.set('produto',productId);
+  return u.toString();
+}
+
+async function shareProduct(title,productId,button,status){
+  const url=publicShareUrl(productId);
   const shareData={
     title:`${title} | CRIART 3D`,
     text:`Confira este produto da CRIART 3D: ${title}`,
-    url:location.href
+    url
   };
   try{
     if(navigator.share){
@@ -29,7 +38,7 @@ async function shareProduct(title,button,status){
       if(status)status.textContent='Produto compartilhado.';
       return;
     }
-    await navigator.clipboard.writeText(location.href);
+    await navigator.clipboard.writeText(url);
     if(status)status.textContent='Link copiado para a área de transferência.';
     const old=button.textContent;
     button.textContent='✓ Link copiado';
@@ -38,7 +47,7 @@ async function shareProduct(title,button,status){
     if(e?.name==='AbortError')return;
     try{
       const input=document.createElement('textarea');
-      input.value=location.href;
+      input.value=url;
       input.style.position='fixed';input.style.opacity='0';
       document.body.appendChild(input);input.select();
       document.execCommand('copy');input.remove();
@@ -52,7 +61,7 @@ async function shareProduct(title,button,status){
 function mountShare(){
   const detail=currentProductDetail();
   if(!detail)return;
-  const {layout,title}=detail;
+  const {layout,title,productId}=detail;
   if(layout.querySelector('.criart-share-btn'))return;
   ensureStyle();
   const actions=layout.querySelector('.product-detail-info .actions');
@@ -64,7 +73,7 @@ function mountShare(){
   const status=document.createElement('div');
   status.className='muted criart-share-status';
   status.setAttribute('aria-live','polite');
-  btn.addEventListener('click',()=>shareProduct(title,btn,status));
+  btn.addEventListener('click',()=>shareProduct(title,productId,btn,status));
   actions.appendChild(btn);
   actions.insertAdjacentElement('afterend',status);
 }
