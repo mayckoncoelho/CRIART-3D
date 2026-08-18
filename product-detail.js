@@ -5,7 +5,11 @@ import { firebaseConfig } from './firebase-config.js';
 const fb = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const db = getFirestore(fb);
 const money=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v)||0);
-const esc=(v='')=>String(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+const esc=(v='')=>String(v).replace(/[&<>'\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','\"':'&quot;'}[c]));
+
+let routeRenderToken=0;
+let routeTimer=null;
+let renderingProduct=false;
 
 async function findProductById(id){
   if(!id) return null;
@@ -59,10 +63,13 @@ function canonicalProductPath(p){ return `/produto/${encodeURIComponent(p.id)}`;
 
 async function renderProduct(loader,push=true){
   const app=document.querySelector('#app');
-  if(!app) return;
+  if(!app || renderingProduct) return;
+  renderingProduct=true;
+  const myToken=++routeRenderToken;
   app.innerHTML='<p class="muted">Carregando produto...</p>';
   try{
     const p=await loader();
+    if(myToken!==routeRenderToken) return;
     if(!p || p.ativo===false){
       app.innerHTML='<a class="back product-back" href="/produtos">← Voltar aos produtos</a><h1>Produto não encontrado</h1>';
       bindBack(app);
@@ -85,14 +92,19 @@ async function renderProduct(loader,push=true){
     bindGallery(p);
     bindBack(app);
   }catch(e){
-    app.innerHTML=`<a class="back product-back" href="/produtos">← Voltar aos produtos</a><h1>Não foi possível carregar</h1><p class="muted">${esc(e.message||e)}</p>`;
-    bindBack(app);
+    if(myToken===routeRenderToken){
+      app.innerHTML=`<a class="back product-back" href="/produtos">← Voltar aos produtos</a><h1>Não foi possível carregar</h1><p class="muted">${esc(e.message||e)}</p>`;
+      bindBack(app);
+    }
+  }finally{
+    renderingProduct=false;
   }
 }
 
 function bindBack(app){
   app.querySelector('.product-back')?.addEventListener('click',e=>{
     e.preventDefault();
+    routeRenderToken++;
     history.pushState({},'', '/produtos');
     window.dispatchEvent(new PopStateEvent('popstate'));
   });
@@ -119,13 +131,39 @@ function attachCards(){
   });
 }
 
-function routeProductFromLocation(){
+function productRouteInfo(){
   const path=location.pathname.replace(/\/$/,'');
   const idMatch=path.match(/^\/produto\/([^/]+)$/);
-  if(idMatch){ openProductById(decodeURIComponent(idMatch[1]),false); return true; }
+  if(idMatch) return {type:'id',value:decodeURIComponent(idMatch[1])};
   const params=new URLSearchParams(location.search);
-  if(path==='/produto' && params.get('nome')){ openProductByName(params.get('nome'),false); return true; }
-  return false;
+  if(path==='/produto' && params.get('nome')) return {type:'name',value:params.get('nome')};
+  return null;
+}
+
+function routeProductFromLocation(force=false){
+  const info=productRouteInfo();
+  if(!info) return false;
+  const app=document.querySelector('#app');
+  const currentId=app?.querySelector('.product-detail-layout')?.dataset.productId;
+  if(!force && info.type==='id' && currentId===info.value) return true;
+  if(renderingProduct) return true;
+  if(info.type==='id') openProductById(info.value,false);
+  else openProductByName(info.value,false);
+  return true;
+}
+
+function scheduleRouteGuard(){
+  clearTimeout(routeTimer);
+  routeTimer=setTimeout(()=>{
+    attachCards();
+    const info=productRouteInfo();
+    if(!info) return;
+    const app=document.querySelector('#app');
+    const hasDetail=!!app?.querySelector('.product-detail-layout');
+    const text=(app?.textContent||'').toLowerCase();
+    const appOverwroteRoute=!hasDetail && (text.includes('página não encontrada') || text.includes('carregando') || app?.children.length>0);
+    if(appOverwroteRoute) routeProductFromLocation(true);
+  },60);
 }
 
 document.addEventListener('click',e=>{
@@ -138,11 +176,12 @@ document.addEventListener('click',e=>{
   openProductById(decodeURIComponent(m[1]),true);
 });
 
-const obs=new MutationObserver(attachCards);
+const obs=new MutationObserver(scheduleRouteGuard);
 obs.observe(document.documentElement,{subtree:true,childList:true});
 attachCards();
-routeProductFromLocation();
+routeProductFromLocation(true);
 window.addEventListener('popstate',()=>{
-  if(routeProductFromLocation()) return;
+  if(routeProductFromLocation(true)) return;
   if(location.pathname==='/produtos' || location.pathname==='/') location.reload();
 });
+window.addEventListener('pageshow',()=>routeProductFromLocation(true));
