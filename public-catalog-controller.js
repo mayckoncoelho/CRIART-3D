@@ -41,7 +41,7 @@ function productCard(p){
   const img = p.imageUrls?.[0];
   return `<article class="card product-card public-product-card" data-product-id="${esc(p.id)}">
     ${img ? `<img class="product-image" src="${esc(img)}" alt="${esc(p.nome)}">` : `<div class="product-image placeholder">Sem foto</div>`}
-    <div class="product-body"><span class="tag">CRIART 3D</span><h3>${esc(p.nome)}</h3><p class="muted">${esc(p.descricao||'')}</p><div class="price">${money(p.preco)}</div><div class="actions"><a class="btn secondary" href="/produto/${encodeURIComponent(p.id)}">Ver detalhes</a></div></div>
+    <div class="product-body"><span class="tag">CRIART 3D</span><h3>${esc(p.nome)}</h3><div class="price">${money(p.preco)}</div><div class="actions"><a class="btn secondary" href="/produto/${encodeURIComponent(p.id)}">Ver detalhes</a></div></div>
   </article>`;
 }
 
