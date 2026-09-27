@@ -75,7 +75,7 @@
           <div>
             <p class="eyebrow">INTEGRAÇÃO</p>
             <h2>Pronto para conectar ao OpenClaw</h2>
-            <p>Esta página já mantém as configurações separadas do restante do CRIART. Nesta primeira versão, os dados ficam salvos no navegador e podem ser exportados em JSON. A conexão persistente com o OpenClaw será adicionada como uma camada própria, sem alterar o catálogo.</p>
+            <p>As configurações ficam separadas do restante do CRIART e agora também são salvas no Firestore. O OpenClaw pode ler diretamente o documento pela API REST, sem arquivo local.</p>
           </div>
           <button class="btn ghost" data-section-jump="automation">Ver automação</button>
         </article>
@@ -172,6 +172,6 @@
   </dialog>
 
   <input type="file" id="importFile" accept="application/json" hidden>
-  <script src="/marketplace-analyst/app.js?v=1"></script>
+  <script type="module" src="/marketplace-analyst/app.js?v=2"></script>
 </body>
 </html>
