@@ -1,5 +1,15 @@
+import { firebaseConfig } from "/firebase-config.js";
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+
 (() => {
   const STORAGE_KEY = "criart.marketplaceAnalyst.config.v1";
+  const FIRESTORE_COLLECTION = "marketplaceAnalystConfig";
+  const FIRESTORE_DOC = "main";
+  const firebaseApp = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+  const auth = getAuth(firebaseApp);
+  const db = getFirestore(firebaseApp);
   const defaultRiskTerms = ["NP","P0","P zero","pizero","não pago","não transfere","sem transferência","multas","IPVA atrasado","licenciamento atrasado","problema com último dono","sem recibo","sem ATPV","alienado","gravame","busca e apreensão","restrição judicial","restrição administrativa","inventário","proprietário falecido","só para interior","só para sítio"];
   const $ = (id) => document.getElementById(id);
   const state = { searches: [], sources: [], riskTerms: [...defaultRiskTerms] };
@@ -80,19 +90,45 @@
     $("agentSummary").textContent=lines.join("\n");
   }
   function renderAll(){renderSearches();renderSources();renderRisk();updateSummary();}
-  function save(){
-    const c=readForm(); localStorage.setItem(STORAGE_KEY,JSON.stringify(c));
-    $("saveState").textContent="Salvo em "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+  async function save(){
+    const c=readForm();
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(c));
     updateSummary();
+    $("saveState").textContent="Salvando...";
+    try{
+      if(!auth.currentUser) throw new Error("Faça login no Admin do CRIART antes de salvar na nuvem.");
+      await setDoc(doc(db,FIRESTORE_COLLECTION,FIRESTORE_DOC),c,{merge:false});
+      $("saveState").textContent="Salvo na nuvem em "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+    }catch(err){
+      console.error("Marketplace Analyst: falha ao salvar no Firestore",err);
+      $("saveState").textContent="Salvo localmente; nuvem não atualizada";
+      alert(err?.message||"Não foi possível salvar a configuração no Firestore.");
+    }
   }
-  function load(){try{const raw=localStorage.getItem(STORAGE_KEY); if(raw) applyConfig(JSON.parse(raw)); else renderAll();}catch{renderAll();}}
+  async function load(){
+    try{
+      const snap=await getDoc(doc(db,FIRESTORE_COLLECTION,FIRESTORE_DOC));
+      if(snap.exists()){
+        applyConfig(snap.data());
+        $("saveState").textContent="Configuração carregada da nuvem";
+        localStorage.setItem(STORAGE_KEY,JSON.stringify(snap.data()));
+        return;
+      }
+    }catch(err){
+      console.warn("Marketplace Analyst: usando fallback local",err);
+    }
+    try{
+      const raw=localStorage.getItem(STORAGE_KEY);
+      if(raw) applyConfig(JSON.parse(raw)); else renderAll();
+    }catch{renderAll();}
+  }
 
   document.querySelectorAll(".nav-item").forEach(b=>b.addEventListener("click",()=>showSection(b.dataset.section)));
   document.querySelectorAll("[data-section-jump]").forEach(b=>b.addEventListener("click",()=>showSection(b.dataset.sectionJump)));
   function showSection(id){document.querySelectorAll(".panel-section").forEach(s=>s.classList.toggle("active",s.id===id));document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.section===id));}
 
   document.querySelectorAll("input,select,textarea").forEach(el=>el.addEventListener("input",updateSummary));
-  $("saveBtn").addEventListener("click",save);
+  $("saveBtn").addEventListener("click",()=>save());
   $("exportBtn").addEventListener("click",()=>{const data=JSON.stringify(readForm(),null,2);const blob=new Blob([data],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="marketplace-analyst-config.json";a.click();URL.revokeObjectURL(a.href);});
   $("addSearchBtn").addEventListener("click",()=>$("searchDialog").showModal());
   $("confirmSearchBtn").addEventListener("click",(e)=>{e.preventDefault();const f=new FormData($("searchForm")); if(!f.get("name")) return; state.searches.push({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),name:String(f.get("name")),category:String(f.get("category")),yearMin:f.get("yearMin")?Number(f.get("yearMin")):null,yearMax:f.get("yearMax")?Number(f.get("yearMax")):null,maxPrice:f.get("maxPrice")?Number(f.get("maxPrice")):null,minProfit:f.get("minProfit")?Number(f.get("minProfit")):null,radius:f.get("radius")?Number(f.get("radius")):null,expandedRadius:f.get("expandedRadius")?Number(f.get("expandedRadius")):null,notes:String(f.get("notes")||""),enabled:true});$("searchForm").reset();$("searchDialog").close();renderAll();save();});
