@@ -23,25 +23,54 @@
       {
         "source": "/index.html",
         "headers": [
-          { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate" }
+          {
+            "key": "Cache-Control",
+            "value": "no-store, no-cache, must-revalidate"
+          }
         ]
       },
       {
         "source": "/app.js",
         "headers": [
-          { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate" }
+          {
+            "key": "Cache-Control",
+            "value": "no-store, no-cache, must-revalidate"
+          }
         ]
       },
       {
         "source": "/firebase-config.js",
         "headers": [
-          { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate" }
+          {
+            "key": "Cache-Control",
+            "value": "no-store, no-cache, must-revalidate"
+          }
         ]
       },
       {
         "source": "/styles.css",
         "headers": [
-          { "key": "Cache-Control", "value": "no-cache, must-revalidate" }
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, must-revalidate"
+          }
+        ]
+      },
+      {
+        "source": "/marketplace-analyst/**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-store, no-cache, must-revalidate"
+          },
+          {
+            "key": "Pragma",
+            "value": "no-cache"
+          },
+          {
+            "key": "Expires",
+            "value": "0"
+          }
         ]
       }
     ]
