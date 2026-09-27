@@ -19,6 +19,14 @@ service cloud.firestore {
       allow read, create, update, delete: if isAdmin();
     }
 
+    // Marketplace Analyst: configuração sem segredos.
+    // Leitura pública é intencional para permitir consumo direto pela API REST do Firestore.
+    // Escrita permanece restrita ao administrador autenticado.
+    match /marketplaceAnalystConfig/main {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
