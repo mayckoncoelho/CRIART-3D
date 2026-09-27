@@ -170,6 +170,7 @@ async function organizeAdmin(){
     const b=document.createElement('button'); b.className='criart-admin-tab'; b.dataset.target=key; b.textContent=label; tabs.appendChild(b);
   });
   const calc=document.createElement('button'); calc.className='criart-admin-tab'; calc.textContent='Calculadora'; calc.onclick=()=>location.assign('/calculadora'); tabs.appendChild(calc);
+  const marketplace=document.createElement('button'); marketplace.className='criart-admin-tab'; marketplace.textContent='Marketplace Analyst'; marketplace.onclick=()=>location.assign('/marketplace-analyst/'); tabs.appendChild(marketplace);
   head.after(tabs);
 
   const host=document.createElement('div'); tabs.after(host);
