@@ -36,7 +36,7 @@
   function setVal(id,v){ if(v!==undefined&&v!==null) $(id).value=v; }
   function applyConfig(c){
     $("monitoringEnabled").checked=c.monitoringEnabled!==false;
-    setVal("homeRegion",c.homeRegion); setVal("defaultRadius",c.defaultRadiusKm??100); setVal("expandedRadius",c.expandedRadiusKm??300);
+    setVal("homeRegion",c.homeRegion); setVal("defaultRadius",c.defaultRadiusKm); setVal("expandedRadius",c.expandedRadiusKm);
     setVal("maxInvestment",c.maxInvestment); setVal("minimumProfit",c.minimumProfit); setVal("minimumMarginPercent",c.minimumMarginPercent);
     setVal("distanceCostPerKm",c.distanceCostPerKm); setVal("transferCost",c.transferCostDefault); setVal("maintenanceReserve",c.maintenanceReserveDefault); setVal("riskReserve",c.riskReserveDefault);
     $("includeRisky").checked=c.includeRiskyListings!==false; $("crossDemand").checked=c.crossDemand!==false; $("saveDuplicates").checked=!!c.showPreviouslyAnalyzed;
@@ -63,12 +63,12 @@
     const c=readForm();
     $("statusText").textContent=c.monitoringEnabled?"Ativo":"Pausado";
     $("activeSearchCount").textContent=state.searches.length;
-    $("radiusSummary").textContent=(c.defaultRadiusKm||0)+" km";
+    $("radiusSummary").textContent=c.defaultRadiusKm?c.defaultRadiusKm+" km":"Sem limite";
     $("profitSummary").textContent=c.minimumProfit?money(c.minimumProfit):"Não definido";
     const lines=[
       "Monitoramento: "+(c.monitoringEnabled?"ATIVO":"PAUSADO"),
       "Região: "+(c.homeRegion||"não definida"),
-      "Raio: "+(c.defaultRadiusKm||"—")+" km → "+(c.expandedRadiusKm||"—")+" km",
+      "Raio: "+(c.defaultRadiusKm?c.defaultRadiusKm+" km":"sem limite")+" → "+(c.expandedRadiusKm?c.expandedRadiusKm+" km":"sem expansão"),
       "Buscas ativas: "+state.searches.length,
       "Lucro mínimo padrão: "+money(c.minimumProfit),
       "Margem mínima: "+(c.minimumMarginPercent==null?"—":c.minimumMarginPercent+"%"),
