@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0b1220" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Marketplace Analyst | CRIART</title>
+  <link rel="stylesheet" href="/marketplace-analyst/styles.css?v=1" />
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">CRIART <span>LAB</span></div>
+      <div class="module-title">Marketplace Analyst</div>
+      <nav>
+        <button class="nav-item active" data-section="dashboard">Visão geral</button>
+        <button class="nav-item" data-section="searches">Buscas</button>
+        <button class="nav-item" data-section="costs">Custos e margens</button>
+        <button class="nav-item" data-section="risk">Risco documental</button>
+        <button class="nav-item" data-section="sources">Fontes</button>
+        <button class="nav-item" data-section="automation">Automação</button>
+      </nav>
+      <div class="sidebar-foot">
+        <span id="saveState">Configuração local</span>
+        <a href="/">Voltar ao CRIART 3D</a>
+      </div>
+    </aside>
+
+    <main>
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">CENTRO DE CONTROLE</p>
+          <h1>Marketplace Analyst</h1>
+          <p class="subtitle">Configure o que o Atlas deve procurar, quanto pode custar e qual margem vale a pena.</p>
+        </div>
+        <div class="top-actions">
+          <button class="btn ghost" id="exportBtn">Exportar JSON</button>
+          <button class="btn primary" id="saveBtn">Salvar alterações</button>
+        </div>
+      </header>
+
+      <section class="panel-section active" id="dashboard">
+        <div class="stats">
+          <article class="stat"><span>Monitoramento</span><strong id="statusText">Ativo</strong><small>Configuração atual</small></article>
+          <article class="stat"><span>Buscas ativas</span><strong id="activeSearchCount">0</strong><small>Perfis monitorados</small></article>
+          <article class="stat"><span>Raio padrão</span><strong id="radiusSummary">100 km</strong><small>Antes de expandir</small></article>
+          <article class="stat"><span>Lucro mínimo</span><strong id="profitSummary">Não definido</strong><small>Filtro principal</small></article>
+        </div>
+
+        <div class="grid two">
+          <article class="card">
+            <div class="card-head"><div><p class="eyebrow">GERAL</p><h2>Parâmetros principais</h2></div><label class="switch"><input id="monitoringEnabled" type="checkbox" checked><span></span></label></div>
+            <div class="form-grid">
+              <label>Região principal<input id="homeRegion" placeholder="Ex.: Campina da Lagoa, PR"></label>
+              <label>Raio inicial (km)<input id="defaultRadius" type="number" min="1" value="100"></label>
+              <label>Raio expandido (km)<input id="expandedRadius" type="number" min="1" value="300"></label>
+              <label>Investimento máximo (R$)<input id="maxInvestment" type="number" min="0" step="100" placeholder="Ex.: 30000"></label>
+            </div>
+          </article>
+
+          <article class="card">
+            <p class="eyebrow">COMPORTAMENTO</p>
+            <h2>Como tratar oportunidades</h2>
+            <div class="check-list">
+              <label><input id="includeRisky" type="checkbox" checked> Incluir anúncios com risco documental</label>
+              <label><input id="crossDemand" type="checkbox" checked> Cruzar automaticamente procura × oferta</label>
+              <label><input id="saveDuplicates" type="checkbox"> Mostrar anúncios já analisados novamente</label>
+              <label><input id="requireApproval" type="checkbox" checked disabled> Exigir aprovação antes de publicar ou negociar</label>
+            </div>
+          </article>
+        </div>
+
+        <article class="card notice">
+          <div>
+            <p class="eyebrow">INTEGRAÇÃO</p>
+            <h2>Pronto para conectar ao OpenClaw</h2>
+            <p>Esta página já mantém as configurações separadas do restante do CRIART. Nesta primeira versão, os dados ficam salvos no navegador e podem ser exportados em JSON. A conexão persistente com o OpenClaw será adicionada como uma camada própria, sem alterar o catálogo.</p>
+          </div>
+          <button class="btn ghost" data-section-jump="automation">Ver automação</button>
+        </article>
+      </section>
+
+      <section class="panel-section" id="searches">
+        <div class="section-title">
+          <div><p class="eyebrow">BUSCAS</p><h2>Produtos monitorados</h2><p>Crie quantos perfis quiser. Cada um pode ter seus próprios limites de ano, preço, margem e raio.</p></div>
+          <button class="btn primary" id="addSearchBtn">+ Nova busca</button>
+        </div>
+        <div id="searchList" class="search-list"></div>
+      </section>
+
+      <section class="panel-section" id="costs">
+        <div class="section-title"><div><p class="eyebrow">CUSTOS</p><h2>Custos e margem mínima</h2><p>Valores usados para calcular o custo real da oportunidade.</p></div></div>
+        <article class="card">
+          <div class="form-grid three">
+            <label>Lucro mínimo (R$)<input id="minimumProfit" type="number" min="0" step="100" placeholder="Ex.: 2000"></label>
+            <label>Margem mínima (%)<input id="minimumMarginPercent" type="number" min="0" step="1" placeholder="Ex.: 20"></label>
+            <label>Custo por km (R$)<input id="distanceCostPerKm" type="number" min="0" step="0.01" placeholder="Ex.: 1.20"></label>
+            <label>Transferência padrão (R$)<input id="transferCost" type="number" min="0" step="10" placeholder="Ex.: 500"></label>
+            <label>Reserva de manutenção (R$)<input id="maintenanceReserve" type="number" min="0" step="50" placeholder="Ex.: 500"></label>
+            <label>Reserva extra de risco (R$)<input id="riskReserve" type="number" min="0" step="50" placeholder="Opcional"></label>
+          </div>
+        </article>
+      </section>
+
+      <section class="panel-section" id="risk">
+        <div class="section-title"><div><p class="eyebrow">RISCO</p><h2>Classificação documental</h2><p>Estes termos não excluem anúncios. Eles apenas aumentam o nível de atenção.</p></div></div>
+        <article class="card">
+          <div class="risk-grid" id="riskTerms"></div>
+          <div class="inline-add"><input id="newRiskTerm" placeholder="Adicionar outro termo ou gíria"><button class="btn ghost" id="addRiskBtn">Adicionar</button></div>
+        </article>
+      </section>
+
+      <section class="panel-section" id="sources">
+        <div class="section-title"><div><p class="eyebrow">FONTES</p><h2>Marketplace e grupos</h2><p>Cadastre os locais que o agente deve considerar como fontes autorizadas.</p></div></div>
+        <article class="card">
+          <div id="sourceList" class="source-list"></div>
+          <div class="source-add">
+            <select id="sourceType"><option>Facebook Marketplace</option><option>Grupo do Facebook</option><option>OLX</option><option>Outra fonte</option></select>
+            <input id="sourceName" placeholder="Nome da fonte ou grupo">
+            <input id="sourceUrl" placeholder="Link">
+            <button class="btn primary" id="addSourceBtn">Adicionar</button>
+          </div>
+        </article>
+      </section>
+
+      <section class="panel-section" id="automation">
+        <div class="section-title"><div><p class="eyebrow">AUTOMAÇÃO</p><h2>Frequência e alertas</h2><p>Esses valores serão usados pelo Cron/Automation do OpenClaw quando a integração for ativada.</p></div></div>
+        <div class="grid two">
+          <article class="card">
+            <div class="form-grid">
+              <label>Verificar a cada
+                <select id="checkInterval">
+                  <option value="15">15 minutos</option>
+                  <option value="30" selected>30 minutos</option>
+                  <option value="60">1 hora</option>
+                  <option value="120">2 horas</option>
+                </select>
+              </label>
+              <label>Canal de alertas
+                <select id="alertChannel"><option value="telegram">Telegram</option><option value="none">Somente painel</option></select>
+              </label>
+              <label>Alertar se lucro ≥ (R$)<input id="alertProfit" type="number" min="0" step="100" placeholder="Ex.: 3000"></label>
+              <label>Alertar demanda nova<select id="alertDemand"><option value="yes">Sim</option><option value="no">Não</option></select></label>
+            </div>
+          </article>
+          <article class="card code-card">
+            <p class="eyebrow">OPENCLAW</p><h2>Resumo para o agente</h2>
+            <pre id="agentSummary"></pre>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="searchDialog">
+    <form method="dialog" id="searchForm">
+      <div class="dialog-head"><div><p class="eyebrow">NOVA BUSCA</p><h2>Produto monitorado</h2></div><button class="icon-btn" value="cancel" aria-label="Fechar">×</button></div>
+      <div class="form-grid">
+        <label>Nome da busca<input name="name" required placeholder="Ex.: Honda CG Fan"></label>
+        <label>Categoria<select name="category"><option>Motos</option><option>Carros</option><option>Eletrônicos</option><option>Impressão 3D</option><option>Outros</option></select></label>
+        <label>Ano mínimo<input name="yearMin" type="number" min="1900" max="2100"></label>
+        <label>Ano máximo<input name="yearMax" type="number" min="1900" max="2100"></label>
+        <label>Preço máximo (R$)<input name="maxPrice" type="number" min="0"></label>
+        <label>Lucro mínimo (R$)<input name="minProfit" type="number" min="0"></label>
+        <label>Raio inicial (km)<input name="radius" type="number" min="1"></label>
+        <label>Raio expandido (km)<input name="expandedRadius" type="number" min="1"></label>
+      </div>
+      <label class="wide">Observações<textarea name="notes" rows="3" placeholder="Versão, cor, condição, palavras-chave..."></textarea></label>
+      <div class="dialog-actions"><button class="btn ghost" value="cancel">Cancelar</button><button class="btn primary" id="confirmSearchBtn" value="default">Adicionar busca</button></div>
+    </form>
+  </dialog>
+
+  <input type="file" id="importFile" accept="application/json" hidden>
+  <script src="/marketplace-analyst/app.js?v=1"></script>
+</body>
+</html>
