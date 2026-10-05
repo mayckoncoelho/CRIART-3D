@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://criart3d.com.br/schemas/makerworld-manifest.schema.json",
+  "title": "MakerWorldProductManifest",
+  "description": "Contrato de dados para o manifesto JSON de importação de modelos do MakerWorld na CRIART 3D.",
+  "type": "object",
+  "required": [
+    "nome",
+    "descricao",
+    "sourceUrl",
+    "filamentGrams",
+    "printTimeMinutes"
+  ],
+  "properties": {
+    "nome": {
+      "type": "string",
+      "minLength": 2,
+      "description": "Nome comercial do produto a ser exibido no catálogo."
+    },
+    "descricao": {
+      "type": "string",
+      "minLength": 3,
+      "description": "Descrição detalhada do produto, acabamento, dimensões ou recomendações."
+    },
+    "sourceUrl": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://([a-zA-Z0-9-]+\\.)?makerworld\\.com(/.*)?$",
+      "description": "URL pública do modelo no MakerWorld (ex: https://makerworld.com/en/models/123456#profileId-789012)."
+    },
+    "profileId": {
+      "type": ["string", "null"],
+      "description": "ID numérico do perfil de impressão no MakerWorld (extraído da URL ou informado manualmente)."
+    },
+    "profileName": {
+      "type": "string",
+      "description": "Nome descritivo do perfil de impressão (ex: '0.20mm Standard', 'Bambu 0.16mm Optimal')."
+    },
+    "filamentGrams": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "Consumo de filamento em gramas para a impressão."
+    },
+    "printTimeMinutes": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "Tempo total de impressão estimado em minutos."
+    },
+    "material": {
+      "type": "string",
+      "default": "PLA",
+      "description": "Tipo de polímero/filamento utilizado (ex: PLA, PETG, ABS, TPU)."
+    },
+    "colors": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Lista de cores recomendadas ou disponíveis para o produto."
+    },
+    "dimensions": {
+      "type": ["object", "string", "null"],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "z": { "type": "number" },
+        "unit": { "type": "string", "default": "mm" }
+      },
+      "description": "Dimensões aproximadas da peça final (em mm)."
+    },
+    "preco": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "Preço final em BRL (opcional; se omitido, é calculado automaticamente pela calculadora com base nas gramas e tempo)."
+    },
+    "pricingInputs": {
+      "type": "object",
+      "description": "Sobrescritas opcionais de parâmetros de custo para a precificação.",
+      "properties": {
+        "precoRolo": { "type": "number", "exclusiveMinimum": 0 },
+        "pesoRolo": { "type": "number", "exclusiveMinimum": 0 },
+        "maqHora": { "type": "number", "minimum": 0 },
+        "energiaHora": { "type": "number", "minimum": 0 },
+        "outros": { "type": "number", "minimum": 0 },
+        "riscoFalhaPercent": { "type": "number", "minimum": 0 },
+        "markupPercent": { "type": "number", "minimum": 0 },
+        "descontoQuantidadePercent": { "type": "number", "minimum": 0 }
+      }
+    },
+    "images": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Lista de nomes ou referências de arquivos locais baixados pelo OpenClaw."
+    }
+  },
+  "additionalProperties": true
+}

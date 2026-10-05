@@ -1,0 +1,10 @@
+{
+  "name": "criart-3d",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "CRIART 3D - Catálogo e precificação de impressão 3D",
+  "scripts": {
+    "test": "node --test tests/makerworld-product.test.js tests/pricing-calculator.test.js tests/makerworld-security.test.js"
+  },
+  "private": true
+}
