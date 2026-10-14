@@ -23,12 +23,9 @@ function protectInternalRoute(user){
   const path = currentPath();
   if(admin) return;
   if(path === '/calculadora' || path === '/admin'){
-    history.replaceState({},'', '/');
-    const app = document.querySelector('#app');
-    if(app){
-      app.innerHTML = `<a class="back" href="/">← Voltar ao site</a><h1>Área restrita</h1><div class="notice">Esta área é exclusiva da administração.</div>`;
-      window.dispatchEvent(new PopStateEvent('popstate'));
-    }
+    const destination = user ? '/' : '/auth';
+    history.replaceState({},'', destination);
+    window.dispatchEvent(new PopStateEvent('popstate'));
   }
 }
 

@@ -114,6 +114,12 @@ precoPorUnidade = final / quantidade
 ### 4.1. Sem Cron Job e Inicialização Sob Demanda
 - Não há agendamento automático via cron.
 - A primeira execução aguarda um link real fornecido explicitamente pelo operador.
+- O Admin oferece o campo **Link do anúncio no MakerWorld / Bambu Lab** para validar modelo e perfil.
+- **Usar no cadastro** preenche sourceUrl e, quando disponível, profileId no manifesto.
+- **Enviar ao agente** abre o compartilhamento do dispositivo; no desktop, usa o compartilhamento do Telegram e, se necessário, copia a solicitação como fallback.
+- Depois que o link chega ao canal, o agente prepara manifesto, fotos locais, descrição e preço sem publicar.
+- O agente envia uma janela de aprovação com o rascunho completo; somente uma aprovação explícita permite publicar ou atualizar.
+- **Abrir anúncio** abre somente a URL HTTPS normalizada do domínio MakerWorld.
 - Nenhum produto fictício ou de teste deve ser criado no banco de produção.
 
 ### 4.2. Extração e Tratamento de Bloqueios (Cloudflare / CAPTCHA)
@@ -132,6 +138,8 @@ precoPorUnidade = final / quantidade
 - A autenticação é realizada unicamente através da sessão Admin existente no navegador (`auth.currentUser`).
 - Nenhuma chave privada ou credencial de serviço é embutida em scripts públicos.
 - O operador abre o painel `/admin`, carrega o arquivo `.json` gerado pelo OpenClaw (ou cola o JSON na área de texto) e seleciona as imagens do disco.
+- O agente deve parar com o formulário validado e solicitar aprovação no canal de origem antes de clicar em **Publicar no catálogo** ou **Atualizar produto existente**.
+- Qualquer alteração em título, descrição, preço, perfil ou imagens após a aprovação invalida a aprovação anterior.
 
 ---
 

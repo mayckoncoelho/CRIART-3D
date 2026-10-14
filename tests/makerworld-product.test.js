@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   normalizeMakerWorldUrl,
+  buildMakerWorldAgentRequest,
   buildSourceKey,
   validateMakerWorldManifest,
   buildMakerWorldProductPayload,
@@ -341,5 +342,24 @@ test('isDuplicateMakerWorldProduct diferencia perfis distintos do mesmo modelo e
     isDuplicateMakerWorldProduct(produtoPerfilA, '', 'https://makerworld.com/en/models/123456'),
     false
   );
+});
+
+test('buildMakerWorldAgentRequest prepara pedido seguro com modelo e perfil', () => {
+  const request = buildMakerWorldAgentRequest(
+    'https://www.makerworld.com/en/models/123456-suporte#profileId-789012'
+  );
+
+  assert.equal(request.isValid, true);
+  assert.equal(request.normalized.modelId, '123456');
+  assert.equal(request.normalized.profileId, '789012');
+  assert.match(request.requestText, /CRIART 3D/);
+  assert.match(request.requestText, /123456/);
+  assert.match(request.requestText, /789012/);
+  assert.match(request.requestText, /fotos/i);
+  assert.match(request.requestText, /descrição/i);
+
+  const invalid = buildMakerWorldAgentRequest('https://example.com/model/123');
+  assert.equal(invalid.isValid, false);
+  assert.equal(invalid.requestText, '');
 });
 

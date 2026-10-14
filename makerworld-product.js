@@ -143,6 +143,39 @@ export function normalizeMakerWorldUrl(rawUrl = '') {
 }
 
 /**
+ * Monta uma solicitação segura e padronizada para o agente processar um anúncio.
+ */
+export function buildMakerWorldAgentRequest(rawUrl = '') {
+  const normalized = normalizeMakerWorldUrl(rawUrl);
+  if (!normalized.isValid) {
+    return {
+      isValid: false,
+      error: normalized.error,
+      requestText: '',
+      normalized,
+    };
+  }
+
+  const lines = [
+    'CRIART 3D — processar anúncio do MakerWorld',
+    `Link: ${normalized.originalUrl || normalized.canonicalUrl}`,
+    `Modelo: ${normalized.modelId}`,
+    `Perfil: ${normalized.profileId || 'identificar no anúncio'}`,
+    '',
+    'Acesse o anúncio e prepare o cadastro da peça física para a CRIART 3D.',
+    'Extraia as fotos relacionadas ao perfil selecionado e produza uma descrição comercial original em português.',
+    'Não publique antes de confirmar perfil, gramagem, tempo de impressão, preço positivo e imagens locais válidas.',
+  ];
+
+  return {
+    isValid: true,
+    error: null,
+    requestText: lines.join('\n'),
+    normalized,
+  };
+}
+
+/**
  * Gera chave estável única por modelo e perfil no formato `makerworld:<modelId>:<profileId|slug>`.
  */
 export function buildSourceKey({ modelId, profileId, profileName, sourceUrl } = {}) {
@@ -536,6 +569,7 @@ export function validatePublishPreflight({
   localFilesCount = 0,
   isUpdate = false,
   existingImagesCount = 0,
+  approvalConfirmed = false,
 } = {}) {
   if (!currentUser || !currentUser.uid) {
     return {
@@ -588,6 +622,15 @@ export function validatePublishPreflight({
     return {
       isValid: false,
       error: 'Ao menos uma foto é obrigatória para publicar ou atualizar o anúncio.',
+      manifestValidation,
+    };
+  }
+
+  if (approvalConfirmed !== true) {
+    return {
+      isValid: false,
+      approvalRequired: true,
+      error: 'Aprovação explícita de Dr Mayckon é obrigatória antes de publicar ou atualizar.',
       manifestValidation,
     };
   }

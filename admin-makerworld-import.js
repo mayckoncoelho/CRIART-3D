@@ -26,6 +26,7 @@ import {
 import { calculatePrintPrice, DEFAULT_PRINT_PRICING } from './pricing-calculator.js';
 import {
   normalizeMakerWorldUrl,
+  buildMakerWorldAgentRequest,
   buildSourceKey,
   validateMakerWorldManifest,
   buildMakerWorldProductPayload,
@@ -100,6 +101,29 @@ function ensureStyles() {
       font-family: monospace;
       font-size: 0.82rem;
     }
+    .mw-agent-link-box {
+      border: 1px solid rgba(245, 158, 11, 0.45);
+      background: rgba(245, 158, 11, 0.08);
+      border-radius: 12px;
+      padding: 14px;
+      margin: 14px 0 4px;
+    }
+    .mw-link-row {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) auto auto auto;
+      gap: 8px;
+      align-items: center;
+    }
+    .mw-link-row input {
+      width: 100%;
+      min-width: 0;
+    }
+    .mw-link-status {
+      margin-top: 8px;
+      font-size: 0.8rem;
+    }
+    .mw-link-status.ok { color: #22c55e; }
+    .mw-link-status.error { color: #ef4444; }
     .mw-preview-box {
       background: rgba(255, 255, 255, 0.03);
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -198,14 +222,32 @@ function ensureStyles() {
       margin: 0 0 6px;
       color: #f59e0b;
     }
+    .mw-approval-box {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      border: 1px solid rgba(34, 197, 94, 0.45);
+      background: rgba(34, 197, 94, 0.08);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin: 14px 0 0;
+    }
+    .mw-approval-box input { margin-top: 3px; }
+    .mw-approval-box label { cursor: pointer; }
     .mw-actions {
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
       margin-top: 16px;
     }
+    @media (max-width: 900px) {
+      .mw-link-row { grid-template-columns: 1fr 1fr; }
+      .mw-link-row input { grid-column: 1 / -1; }
+    }
     @media (max-width: 720px) {
       .mw-split { grid-template-columns: 1fr; }
+      .mw-link-row { grid-template-columns: 1fr; }
+      .mw-link-row input { grid-column: auto; }
     }
   `;
   document.head.appendChild(s);
@@ -257,6 +299,21 @@ function renderUI() {
       </p>
     </div>
 
+    <div class="mw-agent-link-box">
+      <div class="mw-field" style="margin-bottom:0;">
+        <label for="mwSourceUrlInput">Link do anúncio no MakerWorld / Bambu Lab</label>
+        <div class="mw-link-row">
+          <input type="url" id="mwSourceUrlInput" inputmode="url" autocomplete="off"
+                 placeholder="https://makerworld.com/en/models/123456#profileId-789012">
+          <button type="button" class="btn secondary" id="mwUseLinkBtn" disabled>Usar no cadastro</button>
+          <button type="button" class="btn secondary" id="mwSendAgentBtn" disabled>Enviar ao agente</button>
+          <button type="button" class="btn secondary" id="mwOpenLinkBtn" disabled>Abrir anúncio</button>
+        </div>
+        <small class="muted">Cole o link com o perfil selecionado. O agente usa esse endereço para consultar o anúncio, preparar fotos locais e redigir a descrição.</small>
+        <div id="mwLinkStatus" class="mw-link-status"></div>
+      </div>
+    </div>
+
     <div class="mw-split">
       <div>
         <div class="mw-field">
@@ -282,6 +339,14 @@ function renderUI() {
 
     <div id="mwDupNotice" style="display:none;" class="mw-dup-box"></div>
 
+    <div class="mw-approval-box">
+      <input type="checkbox" id="mwApprovalCheckbox">
+      <label for="mwApprovalCheckbox">
+        <strong>Aprovação confirmada por Dr Mayckon</strong><br>
+        <small class="muted">Marque somente depois da aprovação explícita do rascunho atual no canal do agente. Qualquer alteração no manifesto ou nas fotos desmarca esta confirmação.</small>
+      </label>
+    </div>
+
     <div class="mw-actions">
       <button type="button" class="btn" id="mwPublishBtn" disabled>Publicar no catálogo</button>
       <button type="button" class="btn secondary" id="mwUpdateBtn" style="display:none;">Atualizar produto existente</button>
@@ -301,26 +366,121 @@ function renderUI() {
 }
 
 function bindCardEvents(card) {
+  const sourceUrlInput = card.querySelector('#mwSourceUrlInput');
+  const useLinkBtn = card.querySelector('#mwUseLinkBtn');
+  const sendAgentBtn = card.querySelector('#mwSendAgentBtn');
+  const openLinkBtn = card.querySelector('#mwOpenLinkBtn');
+  const linkStatus = card.querySelector('#mwLinkStatus');
   const fileInput = card.querySelector('#mwFileInput');
   const jsonArea = card.querySelector('#mwJsonArea');
   const photosInput = card.querySelector('#mwPhotosInput');
+  const approvalCheckbox = card.querySelector('#mwApprovalCheckbox');
   const publishBtn = card.querySelector('#mwPublishBtn');
   const updateBtn = card.querySelector('#mwUpdateBtn');
   const resetBtn = card.querySelector('#mwResetBtn');
 
+  const invalidateApproval = () => {
+    if (approvalCheckbox) approvalCheckbox.checked = false;
+  };
+
+  const refreshLinkState = () => {
+    const request = buildMakerWorldAgentRequest(sourceUrlInput.value);
+    const valid = request.isValid;
+    useLinkBtn.disabled = !valid;
+    sendAgentBtn.disabled = !valid;
+    openLinkBtn.disabled = !valid;
+    linkStatus.className = `mw-link-status ${valid ? 'ok' : (sourceUrlInput.value.trim() ? 'error' : '')}`;
+    linkStatus.textContent = valid
+      ? `✓ Modelo ${request.normalized.modelId}${request.normalized.profileId ? ` · perfil ${request.normalized.profileId}` : ' · perfil ainda precisa ser identificado'}`
+      : (sourceUrlInput.value.trim() ? `✗ ${request.error}` : '');
+    return request;
+  };
+
+  sourceUrlInput.addEventListener('input', () => {
+    invalidateApproval();
+    refreshLinkState();
+  });
+
+  useLinkBtn.addEventListener('click', async () => {
+    invalidateApproval();
+    const request = refreshLinkState();
+    if (!request.isValid) return;
+    let manifest = {};
+    const existing = jsonArea.value.trim();
+    if (existing) {
+      try { manifest = JSON.parse(existing); } catch { manifest = {}; }
+    }
+    manifest.sourceUrl = request.normalized.canonicalUrl;
+    if (request.normalized.profileId) manifest.profileId = request.normalized.profileId;
+    jsonArea.value = JSON.stringify(manifest, null, 2);
+    await processManifestInput(jsonArea.value);
+  });
+
+  sendAgentBtn.addEventListener('click', async () => {
+    const request = refreshLinkState();
+    if (!request.isValid) return;
+
+    const shareTitle = 'CRIART 3D — novo anúncio';
+    try {
+      if (typeof navigator.share === 'function') {
+        await navigator.share({ title: shareTitle, text: request.requestText });
+        linkStatus.className = 'mw-link-status ok';
+        linkStatus.textContent = '✓ Solicitação aberta. Envie para o canal do agente; ele preparará a prévia para aprovação.';
+        return;
+      }
+
+      const text = 'CRIART 3D — processe este anúncio e solicite minha aprovação antes de publicar.';
+      const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(request.normalized.originalUrl || request.normalized.canonicalUrl)}&text=${encodeURIComponent(text)}`;
+      const opened = window.open(shareUrl, '_blank', 'noopener,noreferrer');
+      if (opened) {
+        linkStatus.className = 'mw-link-status ok';
+        linkStatus.textContent = '✓ Telegram aberto. Envie a solicitação ao canal do agente.';
+        return;
+      }
+
+      await navigator.clipboard.writeText(request.requestText);
+      linkStatus.className = 'mw-link-status ok';
+      linkStatus.textContent = '✓ Pedido copiado. Cole no canal do agente para iniciar.';
+    } catch (err) {
+      if (err?.name === 'AbortError') return;
+      try {
+        await navigator.clipboard.writeText(request.requestText);
+        linkStatus.className = 'mw-link-status ok';
+        linkStatus.textContent = '✓ Pedido copiado. Cole no canal do agente para iniciar.';
+      } catch {
+        linkStatus.className = 'mw-link-status error';
+        linkStatus.textContent = 'Não foi possível compartilhar. Copie o link e envie manualmente ao agente.';
+      }
+    }
+  });
+
+  openLinkBtn.addEventListener('click', () => {
+    const request = refreshLinkState();
+    if (request.isValid) window.open(request.normalized.canonicalUrl, '_blank', 'noopener,noreferrer');
+  });
+
   fileInput.addEventListener('change', async (e) => {
+    invalidateApproval();
     const file = e.target.files?.[0];
     if (!file) return;
     try {
       const text = await file.text();
       jsonArea.value = text;
       await processManifestInput(text);
+      try {
+        const manifest = JSON.parse(text);
+        if (manifest.sourceUrl) {
+          sourceUrlInput.value = manifest.sourceUrl;
+          refreshLinkState();
+        }
+      } catch {}
     } catch (err) {
       alert('Erro ao ler arquivo JSON: ' + err.message);
     }
   });
 
   jsonArea.addEventListener('input', () => {
+    invalidateApproval();
     const text = jsonArea.value.trim();
     if (!text) {
       currentManifest = null;
@@ -331,10 +491,13 @@ function bindCardEvents(card) {
   });
 
   photosInput.addEventListener('change', (e) => {
+    invalidateApproval();
     currentLocalFiles = [...(e.target.files || [])];
     renderPhotosPreview();
     validateAndRefreshState();
   });
+
+  approvalCheckbox.addEventListener('change', () => validateAndRefreshState());
 
   publishBtn.addEventListener('click', () => handlePublishOrUpdate(false));
   updateBtn.addEventListener('click', () => handlePublishOrUpdate(true));
@@ -384,6 +547,7 @@ async function validateAndRefreshState() {
   const publishBtn = card.querySelector('#mwPublishBtn');
   const updateBtn = card.querySelector('#mwUpdateBtn');
   const dupNotice = card.querySelector('#mwDupNotice');
+  const approvalCheckbox = card.querySelector('#mwApprovalCheckbox');
 
   if (!currentManifest) {
     renderStatus();
@@ -424,13 +588,15 @@ async function validateAndRefreshState() {
   // - nome, descricao, sourceUrl valido, perfil identificavel, gramas>0, tempo>0, preco>0
   // - ao menos uma foto (se novo: precisa de fotos locais; se atualização: fotos locais ou existentes)
   const hasImages = currentLocalFiles.length > 0 || (dup && Array.isArray(dup.imageUrls) && dup.imageUrls.length > 0);
-  const canPublish = validation.isValid && pricing && pricing.final > 0 && hasImages;
+  const approvalConfirmed = approvalCheckbox?.checked === true;
+  const canPublish = validation.isValid && pricing && pricing.final > 0 && hasImages && approvalConfirmed;
 
   renderStatus({
     manifestValidation: validation,
     pricing,
     duplicate: dup,
     hasImages,
+    approvalConfirmed,
   });
 
   if (dup) {
@@ -472,7 +638,7 @@ function renderStatus(details = {}) {
     return;
   }
 
-  const { manifestValidation, pricing, hasImages } = details;
+  const { manifestValidation, pricing, hasImages, approvalConfirmed } = details;
   const norm = manifestValidation?.normalized;
 
   let calcHtml = '';
@@ -533,6 +699,13 @@ function renderStatus(details = {}) {
     validations.push({ ok: false, msg: 'Nenhuma foto selecionada. Ao menos 1 foto é obrigatória para publicar.' });
   }
 
+  validations.push({
+    ok: approvalConfirmed === true,
+    msg: approvalConfirmed === true
+      ? 'Aprovação explícita confirmada para este rascunho'
+      : 'Aguardando aprovação explícita de Dr Mayckon',
+  });
+
   box.innerHTML = `
     <div class="mw-preview-box">
       <h4 style="margin:0 0 8px;">Validação e Cálculo Automático</h4>
@@ -568,6 +741,7 @@ async function handlePublishOrUpdate(isUpdate) {
   const card = document.querySelector('#makerworldImportCard');
   const publishBtn = card?.querySelector('#mwPublishBtn');
   const updateBtn = card?.querySelector('#mwUpdateBtn');
+  const approvalCheckbox = card?.querySelector('#mwApprovalCheckbox');
   const statusBox = card?.querySelector('#mwStatusArea');
 
   if (publishBtn) publishBtn.disabled = true;
@@ -614,8 +788,17 @@ async function handlePublishOrUpdate(isUpdate) {
     const hasLocalFiles = currentLocalFiles.length > 0;
     const hasExistingImages = existingImages.length > 0;
 
-    if (!hasLocalFiles && (!isUpdate || !hasExistingImages)) {
-      throw new Error('Ao menos uma foto é obrigatória para publicar o produto.');
+    const preflight = validatePublishPreflight({
+      currentUser: auth.currentUser,
+      manifest: currentManifest,
+      duplicate: targetProduct,
+      localFilesCount: currentLocalFiles.length,
+      isUpdate,
+      existingImagesCount: existingImages.length,
+      approvalConfirmed: approvalCheckbox?.checked === true,
+    });
+    if (!preflight.isValid) {
+      throw new Error(preflight.error);
     }
 
     // 2. Upload de novas fotos com rollback de parciais
@@ -733,12 +916,27 @@ function resetForm() {
   detectedDuplicate = null;
   const card = document.querySelector('#makerworldImportCard');
   if (card) {
+    const sourceUrlInput = card.querySelector('#mwSourceUrlInput');
+    const linkStatus = card.querySelector('#mwLinkStatus');
+    const useLinkBtn = card.querySelector('#mwUseLinkBtn');
+    const sendAgentBtn = card.querySelector('#mwSendAgentBtn');
+    const openLinkBtn = card.querySelector('#mwOpenLinkBtn');
     const fileInput = card.querySelector('#mwFileInput');
     const jsonArea = card.querySelector('#mwJsonArea');
     const photosInput = card.querySelector('#mwPhotosInput');
+    const approvalCheckbox = card.querySelector('#mwApprovalCheckbox');
+    if (sourceUrlInput) sourceUrlInput.value = '';
+    if (linkStatus) {
+      linkStatus.textContent = '';
+      linkStatus.className = 'mw-link-status';
+    }
+    if (useLinkBtn) useLinkBtn.disabled = true;
+    if (sendAgentBtn) sendAgentBtn.disabled = true;
+    if (openLinkBtn) openLinkBtn.disabled = true;
     if (fileInput) fileInput.value = '';
     if (jsonArea) jsonArea.value = '';
     if (photosInput) photosInput.value = '';
+    if (approvalCheckbox) approvalCheckbox.checked = false;
   }
   renderPhotosPreview();
   renderStatus();

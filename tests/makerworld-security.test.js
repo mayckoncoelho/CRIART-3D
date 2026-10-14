@@ -216,17 +216,31 @@ test('validatePublishPreflight impede corrida, publicação duplicada e sessão 
   assert.equal(resNoImagesUpdate.isValid, false);
   assert.match(resNoImagesUpdate.error, /foto é obrigatória/i);
 
-  // 7. Sucesso em nova publicação válida
+  // 7. Bloqueio quando o rascunho ainda não foi aprovado
+  const resWithoutApproval = validatePublishPreflight({
+    currentUser: user,
+    manifest: validManifest,
+    duplicate: null,
+    localFilesCount: 2,
+    isUpdate: false,
+    approvalConfirmed: false,
+  });
+  assert.equal(resWithoutApproval.isValid, false);
+  assert.equal(resWithoutApproval.approvalRequired, true);
+  assert.match(resWithoutApproval.error, /aprovação explícita/i);
+
+  // 8. Sucesso em nova publicação válida e aprovada
   const resSuccessNew = validatePublishPreflight({
     currentUser: user,
     manifest: validManifest,
     duplicate: null,
     localFilesCount: 2,
     isUpdate: false,
+    approvalConfirmed: true,
   });
   assert.equal(resSuccessNew.isValid, true);
 
-  // 8. Sucesso em atualização válida preservando fotos existentes
+  // 9. Sucesso em atualização válida, aprovada e preservando fotos existentes
   const resSuccessUpdate = validatePublishPreflight({
     currentUser: user,
     manifest: validManifest,
@@ -234,6 +248,7 @@ test('validatePublishPreflight impede corrida, publicação duplicada e sessão 
     localFilesCount: 0,
     existingImagesCount: 3,
     isUpdate: true,
+    approvalConfirmed: true,
   });
   assert.equal(resSuccessUpdate.isValid, true);
 });
